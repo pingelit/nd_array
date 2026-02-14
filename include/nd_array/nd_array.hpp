@@ -79,6 +79,83 @@ namespace cppa
 				}
 			}
 		};
+
+		template<typename SizeType>
+		struct extents_view
+		{
+			const SizeType* data = nullptr;
+			size_t size          = 0;
+
+			const SizeType* begin( ) const noexcept { return data; }
+			const SizeType* end( ) const noexcept { return data + size; }
+		};
+
+		/// \brief Computes total number of elements from extents
+		/// \tparam MaxRank Maximum number of dimensions supported
+		/// \param extents Extents array
+		/// \param rank Number of active dimensions
+		/// \return Product of active extents (0 when rank is 0)
+		template<size_t MaxRank>
+		[[nodiscard]] constexpr size_t compute_size( const std::array<size_t, MaxRank>& extents, size_t rank ) noexcept
+		{
+			if( rank == 0 )
+				return 0;
+			size_t s = 1;
+			for( size_t i = 0; i < rank; ++i )
+			{
+				s *= extents[i];
+			}
+			return s;
+		}
+
+		/// \brief Checks if a span is contiguous in row-major order
+		/// \tparam MaxRank Maximum number of dimensions supported
+		/// \param extents Extents array
+		/// \param strides Strides array
+		/// \param rank Number of active dimensions
+		/// \return True if the view is contiguous
+		template<size_t MaxRank>
+		[[nodiscard]] constexpr bool is_contiguous( const std::array<size_t, MaxRank>& extents, const std::array<size_t, MaxRank>& strides, size_t rank ) noexcept
+		{
+			if( rank == 0 )
+				return true;
+			if( compute_size<MaxRank>( extents, rank ) == 0 )
+				return true;
+			if( strides[rank - 1] != 1 )
+				return false;
+			for( size_t i = rank - 1; i > 0; --i )
+			{
+				if( strides[i - 1] != strides[i] * extents[i] )
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+
+		/// \brief Validates a permutation for transpose
+		/// 	param MaxRank Maximum number of dimensions supported
+		/// \param axes Permutation array
+		/// \param rank Number of active dimensions
+		/// 	hrows std::invalid_argument if the permutation is invalid
+		template<size_t MaxRank>
+		inline void validate_permutation( const size_t* axes, size_t rank )
+		{
+			if( rank > MaxRank )
+			{
+				throw std::invalid_argument( "Permutation size must be <= MaxRank" );
+			}
+			std::array<bool, MaxRank> seen{};
+			for( size_t i = 0; i < rank; ++i )
+			{
+				const size_t axis = axes[i];
+				if( axis >= rank || seen[axis] )
+				{
+					throw std::invalid_argument( "Invalid permutation" );
+				}
+				seen[axis] = true;
+			}
+		}
 	} // namespace detail
 
 	/// \class nd_span
@@ -102,16 +179,16 @@ namespace cppa
 	/// nd_span<double> span(data, 3, 4);  // 3x4 matrix
 	/// span(1, 2) = 5.0;  // Access element at row 1, column 2
 	/// \endcode
-	template<typename T, size_t MaxRank = 8>
+	template<typename Ty, size_t MaxRank = 8>
 	class nd_span
 	{
 	public:
-		using value_type      = T;        ///< Type of elements
+		using value_type      = Ty;        ///< Type of elements
 		using size_type       = size_t;   ///< Type for sizes and indices
-		using reference       = T&;       ///< Reference to element
-		using const_reference = const T&; ///< Const reference to element
-		using pointer         = T*;       ///< Pointer to element
-		using const_pointer   = const T*; ///< Const pointer to element
+		using reference       = Ty&;       ///< Reference to element
+		using const_reference = const Ty&; ///< Const reference to element
+		using pointer         = Ty*;       ///< Pointer to element
+		using const_pointer   = const Ty*; ///< Const pointer to element
 
 		/// \brief Constructs a span from raw data with explicit extents and strides
 		/// \param data Pointer to the first element
@@ -323,6 +400,76 @@ namespace cppa
 			return nd_span( data_ + offset, new_extents, new_strides, new_rank );
 		}
 
+		/// \brief Reshapes the span (view-only, row-major contiguous required)
+		/// \param new_extents New shape extents
+		/// \return Reshaped view
+		/// \throws std::invalid_argument if rank exceeds MaxRank or size mismatch
+		/// \throws std::runtime_error if the view is not contiguous
+		[[nodiscard]] nd_span reshape( std::initializer_list<size_type> new_extents ) const
+		{
+			return reshape_impl( new_extents.begin( ), new_extents.size( ) );
+		}
+
+		/// \brief Reshapes the span with variadic extents (view-only, row-major contiguous required)
+		/// \tparam Indices Variadic extent types
+		/// \param new_extents New shape extents
+		/// \return Reshaped view
+		template<typename... Indices>
+		[[nodiscard]] nd_span reshape( Indices... new_extents ) const
+		{
+			size_type temp[] = { static_cast<size_type>( new_extents )... };
+			return reshape_impl( temp, sizeof...( new_extents ) );
+		}
+
+		/// \brief Returns a transposed view using an axis permutation
+		/// \param axes Permutation of axes
+		/// \return Transposed view
+		/// 	hrows std::invalid_argument if permutation is invalid
+		[[nodiscard]] nd_span transpose( std::initializer_list<size_type> axes ) const
+		{
+			return transpose_impl( axes.begin( ), axes.size( ) );
+		}
+
+		/// \brief Returns a transposed view by swapping the last two axes
+		/// \return Transposed view
+		[[nodiscard]] nd_span T( ) const
+		{
+			size_type axes_rank = 0;
+			auto axes = make_T_axes( axes_rank );
+			return transpose_impl( axes.data( ), axes_rank );
+		}
+
+		/// \brief Flattens the span into a 1D view (row-major contiguous required)
+		/// \return 1D view of the data
+		[[nodiscard]] nd_span flatten( ) const { return reshape( size( ) ); }
+
+		/// \brief Removes dimensions of extent 1
+		/// \return View with singleton dimensions removed
+		[[nodiscard]] nd_span squeeze( ) const
+		{
+			std::array<size_type, MaxRank> new_extents;
+			std::array<size_type, MaxRank> new_strides;
+			size_type new_rank = 0;
+
+			for( size_t i = 0; i < rank_; ++i )
+			{
+				if( extents_[i] != 1 )
+				{
+					new_extents[new_rank] = extents_[i];
+					new_strides[new_rank] = strides_[i];
+					++new_rank;
+				}
+			}
+
+			for( size_t i = new_rank; i < MaxRank; ++i )
+			{
+				new_extents[i] = 0;
+				new_strides[i] = 0;
+			}
+
+			return nd_span( data_, new_extents, new_strides, new_rank );
+		}
+
 		/// \brief Gets the size of a specific dimension
 		/// \param dim Dimension index (0-based)
 		/// \return Size of the specified dimension
@@ -349,9 +496,9 @@ namespace cppa
 			return strides_[dim];
 		}
 
-		/// \brief Gets the active extents as a vector sized to rank()
-		/// \return Vector of extents for the active dimensions
-		[[nodiscard]] std::vector<size_type> extents( ) const { return std::vector<size_type>( extents_.begin( ), extents_.begin( ) + rank_ ); }
+		/// \brief Gets the active extents as a view sized to rank()
+		/// \return View of extents for the active dimensions
+		[[nodiscard]] detail::extents_view<size_type> extents( ) const noexcept { return { extents_.data( ), rank_ }; }
 
 		/// \brief Gets the total number of elements in the span
 		/// \return Total number of elements (product of all extents)
@@ -412,6 +559,74 @@ namespace cppa
 			}
 			return s;
 		}
+
+		[[nodiscard]] nd_span reshape_impl( const size_type* new_extents, size_type new_rank ) const
+		{
+			if( new_rank > MaxRank )
+			{
+				throw std::invalid_argument( "Rank exceeds MaxRank" );
+			}
+			if( !detail::is_contiguous<MaxRank>( extents_, strides_, rank_ ) )
+			{
+				throw std::runtime_error( "Reshape requires contiguous data" );
+			}
+
+			std::array<size_type, MaxRank> new_extents_array{};
+			for( size_t i = 0; i < new_rank; ++i )
+			{
+				new_extents_array[i] = new_extents[i];
+			}
+
+			const size_type new_size = detail::compute_size<MaxRank>( new_extents_array, new_rank );
+			if( new_size != size( ) )
+			{
+				throw std::invalid_argument( "Reshape size mismatch" );
+			}
+
+			std::array<size_type, MaxRank> new_strides{};
+			detail::stride_computer<MaxRank>::compute( new_strides, new_extents_array, new_rank );
+
+			return nd_span( data_, new_extents_array, new_strides, new_rank );
+		}
+
+		[[nodiscard]] nd_span transpose_impl( const size_type* axes, size_type axes_rank ) const
+		{
+			if( axes_rank != rank_ )
+			{
+				throw std::invalid_argument( "Permutation size must match rank" );
+			}
+			detail::validate_permutation<MaxRank>( axes, axes_rank );
+
+			std::array<size_type, MaxRank> new_extents;
+			std::array<size_type, MaxRank> new_strides;
+			for( size_t i = 0; i < rank_; ++i )
+			{
+				new_extents[i] = extents_[axes[i]];
+				new_strides[i] = strides_[axes[i]];
+			}
+			for( size_t i = rank_; i < MaxRank; ++i )
+			{
+				new_extents[i] = 0;
+				new_strides[i] = 0;
+			}
+
+			return nd_span( data_, new_extents, new_strides, rank_ );
+		}
+
+		[[nodiscard]] std::array<size_type, MaxRank> make_T_axes( size_type& axes_rank ) const
+		{
+			axes_rank = rank_;
+			std::array<size_type, MaxRank> axes{};
+			for( size_t i = 0; i < rank_; ++i )
+			{
+				axes[i] = i;
+			}
+			if( rank_ >= 2 )
+			{
+				std::swap( axes[rank_ - 1], axes[rank_ - 2] );
+			}
+			return axes;
+		}
 	};
 
 	/// \class nd_array
@@ -441,16 +656,16 @@ namespace cppa
 	/// matrix(1, 2) = 5.0;                     // Set element
 	/// auto sub = matrix.subspan(0, 1, 3);     // View of rows 1-2
 	/// \endcode
-	template<typename T, size_t MaxRank = 8>
+	template<typename Ty, size_t MaxRank = 8>
 	class nd_array
 	{
 	public:
-		using value_type      = T;        ///< Type of elements
+		using value_type      = Ty;        ///< Type of elements
 		using size_type       = size_t;   ///< Type for sizes and indices
-		using reference       = T&;       ///< Reference to element
-		using const_reference = const T&; ///< Const reference to element
-		using pointer         = T*;       ///< Pointer to element
-		using const_pointer   = const T*; ///< Const pointer to element
+		using reference       = Ty&;       ///< Reference to element
+		using const_reference = const Ty&; ///< Const reference to element
+		using pointer         = Ty*;       ///< Pointer to element
+		using const_pointer   = const Ty*; ///< Const pointer to element
 
 		/// \brief Constructs an empty array with no dimensions
 		/// \note No memory is allocated
@@ -488,7 +703,7 @@ namespace cppa
 
 			compute_strides( );
 			size_ = compute_size( );
-			data_ = std::make_unique<T[]>( size_ );
+			data_ = std::make_unique<Ty[]>( size_ );
 		}
 
 		/// \brief Constructs an array from a container of dimension sizes
@@ -521,7 +736,7 @@ namespace cppa
 
 			compute_strides( );
 			size_ = compute_size( );
-			data_ = std::make_unique<T[]>( size_ );
+			data_ = std::make_unique<Ty[]>( size_ );
 		}
 
 		/// \brief Constructs an array with variadic dimension sizes
@@ -548,7 +763,7 @@ namespace cppa
 
 			compute_strides( );
 			size_ = compute_size( );
-			data_ = std::make_unique<T[]>( size_ );
+			data_ = std::make_unique<Ty[]>( size_ );
 		}
 
 		/// \brief Copy constructor - performs deep copy of data
@@ -557,7 +772,7 @@ namespace cppa
 		{
 			if( size_ > 0 )
 			{
-				data_ = std::make_unique<T[]>( size_ );
+				data_ = std::make_unique<Ty[]>( size_ );
 				std::copy( other.data_.get( ), other.data_.get( ) + size_, data_.get( ) );
 			}
 		}
@@ -578,7 +793,7 @@ namespace cppa
 				strides_ = other.strides_;
 				if( size_ > 0 )
 				{
-					data_ = std::make_unique<T[]>( size_ );
+					data_ = std::make_unique<Ty[]>( size_ );
 					std::copy( other.data_.get( ), other.data_.get( ) + size_, data_.get( ) );
 				}
 				else
@@ -632,7 +847,7 @@ namespace cppa
 		/// nd_array<double> arr(5, 10);
 		/// auto sub = arr.subspan({{1, 4}, {2, 8}});  // Rows 1-3, columns 2-7
 		/// \endcode
-		[[nodiscard]] nd_span<T, MaxRank> subspan( std::initializer_list<std::pair<size_type, size_type>> ranges )
+		[[nodiscard]] nd_span<Ty, MaxRank> subspan( std::initializer_list<std::pair<size_type, size_type>> ranges )
 		{
 			std::array<size_type, MaxRank> new_extents = extents_;
 			std::array<size_type, MaxRank> new_strides = strides_;
@@ -654,14 +869,14 @@ namespace cppa
 				++dim;
 			}
 
-			return nd_span<T, MaxRank>( data_.get( ) + offset, new_extents, new_strides, rank_ );
+			return nd_span<Ty, MaxRank>( data_.get( ) + offset, new_extents, new_strides, rank_ );
 		}
 
 		/// \brief Creates a subspan with multiple dimension ranges (const)
 		/// \param ranges Initializer list of {start, end} pairs for each dimension
 		/// \return Non-owning view (nd_span) of the restricted data
 		/// 	hrows std::out_of_range if too many dimensions or invalid ranges
-		[[nodiscard]] nd_span<const T, MaxRank> subspan( std::initializer_list<std::pair<size_type, size_type>> ranges ) const
+		[[nodiscard]] nd_span<const Ty, MaxRank> subspan( std::initializer_list<std::pair<size_type, size_type>> ranges ) const
 		{
 			std::array<size_type, MaxRank> new_extents = extents_;
 			std::array<size_type, MaxRank> new_strides = strides_;
@@ -683,7 +898,7 @@ namespace cppa
 				++dim;
 			}
 
-			return nd_span<const T, MaxRank>( data_.get( ) + offset, new_extents, new_strides, rank_ );
+			return nd_span<const Ty, MaxRank>( data_.get( ) + offset, new_extents, new_strides, rank_ );
 		}
 
 		/// \brief Creates a subspan by restricting a range along one dimension
@@ -697,7 +912,7 @@ namespace cppa
 		/// nd_array<double> arr(5, 10);
 		/// auto sub = arr.subspan(0, 1, 4);  // Rows 1-3, all columns
 		/// \endcode
-		[[nodiscard]] nd_span<T, MaxRank> subspan( size_type dim, size_type start, size_type end )
+		[[nodiscard]] nd_span<Ty, MaxRank> subspan( size_type dim, size_type start, size_type end )
 		{
 			if( dim >= rank_ )
 			{
@@ -713,7 +928,7 @@ namespace cppa
 
 			size_type offset = start * strides_[dim];
 
-			return nd_span<T, MaxRank>( data_.get( ) + offset, new_extents, strides_, rank_ );
+			return nd_span<Ty, MaxRank>( data_.get( ) + offset, new_extents, strides_, rank_ );
 		}
 
 		/// \brief Creates a subspan by restricting a range along one dimension (const)
@@ -722,7 +937,7 @@ namespace cppa
 		/// \param end Ending index in that dimension (exclusive)
 		/// \return Non-owning view (nd_span) of the restricted data
 		/// 	hrows std::out_of_range if dimension or range is invalid
-		[[nodiscard]] nd_span<const T, MaxRank> subspan( size_type dim, size_type start, size_type end ) const
+		[[nodiscard]] nd_span<const Ty, MaxRank> subspan( size_type dim, size_type start, size_type end ) const
 		{
 			if( dim >= rank_ )
 			{
@@ -751,7 +966,7 @@ namespace cppa
 		/// nd_array<double> arr(3, 4, 5);  // 3D array
 		/// auto slice = arr.slice(0, 1);    // 2D array (4x5) at first dimension index 1
 		/// \endcode
-		[[nodiscard]] nd_span<T, MaxRank> slice( size_type dim, size_type index )
+		[[nodiscard]] nd_span<Ty, MaxRank> slice( size_type dim, size_type index )
 		{
 			if( dim >= rank_ )
 			{
@@ -785,7 +1000,7 @@ namespace cppa
 				new_strides[i] = 0;
 			}
 
-			return nd_span<T, MaxRank>( data_.get( ) + offset, new_extents, new_strides, new_rank );
+			return nd_span<Ty, MaxRank>( data_.get( ) + offset, new_extents, new_strides, new_rank );
 		}
 
 		/// \brief Creates a lower-dimensional view by fixing one dimension's index (const)
@@ -793,7 +1008,7 @@ namespace cppa
 		/// \param index Index value to fix for that dimension
 		/// \return Non-owning view (nd_span) with rank reduced by 1
 		/// 	hrows std::out_of_range if dimension or index is invalid
-		[[nodiscard]] nd_span<const T, MaxRank> slice( size_type dim, size_type index ) const
+		[[nodiscard]] nd_span<const Ty, MaxRank> slice( size_type dim, size_type index ) const
 		{
 			if( dim >= rank_ )
 			{
@@ -827,7 +1042,101 @@ namespace cppa
 				new_strides[i] = 0;
 			}
 
-			return nd_span<const T, MaxRank>( data_.get( ) + offset, new_extents, new_strides, new_rank );
+			return nd_span<const Ty, MaxRank>( data_.get( ) + offset, new_extents, new_strides, new_rank );
+		}
+
+		/// \brief Reshapes the array view (row-major contiguous)
+		/// \param new_extents New shape extents
+		/// \return Reshaped view
+		[[nodiscard]] nd_span<Ty, MaxRank> reshape( std::initializer_list<size_type> new_extents )
+		{
+			return reshape_impl( new_extents.begin( ), new_extents.size( ) );
+		}
+
+		/// \brief Reshapes the array view (row-major contiguous)
+		/// \param new_extents New shape extents
+		/// \return Reshaped const view
+		[[nodiscard]] nd_span<const Ty, MaxRank> reshape( std::initializer_list<size_type> new_extents ) const
+		{
+			return reshape_impl( new_extents.begin( ), new_extents.size( ) );
+		}
+
+		/// \brief Reshapes the array view with variadic extents
+		/// \tparam Indices Variadic extent types
+		/// \param new_extents New shape extents
+		/// \return Reshaped view
+		template<typename... Indices>
+		[[nodiscard]] nd_span<Ty, MaxRank> reshape( Indices... new_extents )
+		{
+			size_type temp[] = { static_cast<size_type>( new_extents )... };
+			return reshape_impl( temp, sizeof...( new_extents ) );
+		}
+
+		/// \brief Reshapes the array view with variadic extents (const)
+		/// \tparam Indices Variadic extent types
+		/// \param new_extents New shape extents
+		/// \return Reshaped const view
+		template<typename... Indices>
+		[[nodiscard]] nd_span<const Ty, MaxRank> reshape( Indices... new_extents ) const
+		{
+			size_type temp[] = { static_cast<size_type>( new_extents )... };
+			return reshape_impl( temp, sizeof...( new_extents ) );
+		}
+
+		/// \brief Returns a transposed view using an axis permutation
+		/// \param axes Permutation of axes
+		/// \return Transposed view
+		[[nodiscard]] nd_span<Ty, MaxRank> transpose( std::initializer_list<size_type> axes )
+		{
+			return transpose_impl( axes.begin( ), axes.size( ), data_.get( ) );
+		}
+
+		/// \brief Returns a transposed view using an axis permutation (const)
+		/// \param axes Permutation of axes
+		/// \return Transposed const view
+		[[nodiscard]] nd_span<const Ty, MaxRank> transpose( std::initializer_list<size_type> axes ) const
+		{
+			return transpose_impl( axes.begin( ), axes.size( ), data_.get( ) );
+		}
+
+		/// \brief Returns a transposed view by swapping the last two axes
+		/// \return Transposed view
+		[[nodiscard]] nd_span<Ty, MaxRank> T( )
+		{
+			size_type axes_rank = 0;
+			auto axes = make_T_axes( axes_rank );
+			return transpose_impl( axes.data( ), axes_rank, data_.get( ) );
+		}
+
+		/// \brief Returns a transposed view by swapping the last two axes (const)
+		/// \return Transposed const view
+		[[nodiscard]] nd_span<const Ty, MaxRank> T( ) const
+		{
+			size_type axes_rank = 0;
+			auto axes = make_T_axes( axes_rank );
+			return transpose_impl( axes.data( ), axes_rank, data_.get( ) );
+		}
+
+		/// \brief Flattens the array into a 1D view
+		/// \return 1D view of the data
+		[[nodiscard]] nd_span<Ty, MaxRank> flatten( ) { return reshape( size_ ); }
+
+		/// \brief Flattens the array into a 1D view (const)
+		/// \return 1D const view of the data
+		[[nodiscard]] nd_span<const Ty, MaxRank> flatten( ) const { return reshape( size_ ); }
+
+		/// \brief Removes dimensions of extent 1
+		/// \return View with singleton dimensions removed
+		[[nodiscard]] nd_span<Ty, MaxRank> squeeze( )
+		{
+			return squeeze_impl( data_.get( ) );
+		}
+
+		/// \brief Removes dimensions of extent 1 (const)
+		/// \return Const view with singleton dimensions removed
+		[[nodiscard]] nd_span<const Ty, MaxRank> squeeze( ) const
+		{
+			return squeeze_impl( data_.get( ) );
 		}
 
 		/// \brief Gets the size of a specific dimension
@@ -856,9 +1165,9 @@ namespace cppa
 			return strides_[dim];
 		}
 
-		/// \brief Gets the active extents as a vector sized to rank()
-		/// \return Vector of extents for the active dimensions
-		[[nodiscard]] std::vector<size_type> extents( ) const { return std::vector<size_type>( extents_.begin( ), extents_.begin( ) + rank_ ); }
+		/// \brief Gets the active extents as a view sized to rank()
+		/// \return View of extents for the active dimensions
+		[[nodiscard]] detail::extents_view<size_type> extents( ) const noexcept { return { extents_.data( ), rank_ }; }
 
 		/// \brief Gets the total number of elements in the array
 		/// \return Total number of elements (product of all extents)
@@ -905,11 +1214,11 @@ namespace cppa
 		/// nd_array<double> arr(3, 4);
 		/// arr.fill(0.0);  // Set all elements to zero
 		/// \endcode
-		void fill( const T& value ) { std::fill( data_.get( ), data_.get( ) + size_, value ); }
+		void fill( const Ty& value ) { std::fill( data_.get( ), data_.get( ) + size_, value ); }
 
 		/// \brief Applies a function to each element
 		/// \tparam Func Function type (typically a lambda or function object)
-		/// \param func Function that takes a T and returns a T
+		/// \param func Function that takes a Ty and returns a Ty
 		/// \example
 		/// \code
 		/// nd_array<double> arr(3, 4);
@@ -926,7 +1235,7 @@ namespace cppa
 		}
 
 	private:
-		std::unique_ptr<T[]> data_;              ///< Owned data storage
+		std::unique_ptr<Ty[]> data_;              ///< Owned data storage
 		std::array<size_type, MaxRank> extents_; ///< Size of each dimension
 		std::array<size_type, MaxRank> strides_; ///< Stride for each dimension
 		size_type size_;                         ///< Total number of elements
@@ -947,6 +1256,123 @@ namespace cppa
 				s *= extents_[i];
 			}
 			return s;
+		}
+
+		[[nodiscard]] nd_span<Ty, MaxRank> reshape_impl( const size_type* new_extents, size_type new_rank )
+		{
+			if( new_rank > MaxRank )
+			{
+				throw std::invalid_argument( "Rank exceeds MaxRank" );
+			}
+
+			std::array<size_type, MaxRank> new_extents_array{};
+			for( size_t i = 0; i < new_rank; ++i )
+			{
+				new_extents_array[i] = new_extents[i];
+			}
+
+			const size_type new_size = detail::compute_size<MaxRank>( new_extents_array, new_rank );
+			if( new_size != size_ )
+			{
+				throw std::invalid_argument( "Reshape size mismatch" );
+			}
+
+			std::array<size_type, MaxRank> new_strides{};
+			detail::stride_computer<MaxRank>::compute( new_strides, new_extents_array, new_rank );
+			return nd_span<Ty, MaxRank>( data_.get( ), new_extents_array, new_strides, new_rank );
+		}
+
+		[[nodiscard]] nd_span<const Ty, MaxRank> reshape_impl( const size_type* new_extents, size_type new_rank ) const
+		{
+			if( new_rank > MaxRank )
+			{
+				throw std::invalid_argument( "Rank exceeds MaxRank" );
+			}
+
+			std::array<size_type, MaxRank> new_extents_array{};
+			for( size_t i = 0; i < new_rank; ++i )
+			{
+				new_extents_array[i] = new_extents[i];
+			}
+
+			const size_type new_size = detail::compute_size<MaxRank>( new_extents_array, new_rank );
+			if( new_size != size_ )
+			{
+				throw std::invalid_argument( "Reshape size mismatch" );
+			}
+
+			std::array<size_type, MaxRank> new_strides{};
+			detail::stride_computer<MaxRank>::compute( new_strides, new_extents_array, new_rank );
+			return nd_span<const Ty, MaxRank>( data_.get( ), new_extents_array, new_strides, new_rank );
+		}
+
+		template<typename PointerType>
+		[[nodiscard]] auto transpose_impl( const size_type* axes, size_type axes_rank, PointerType data_ptr ) const
+		{
+			if( axes_rank != rank_ )
+			{
+				throw std::invalid_argument( "Permutation size must match rank" );
+			}
+			detail::validate_permutation<MaxRank>( axes, axes_rank );
+
+			std::array<size_type, MaxRank> new_extents;
+			std::array<size_type, MaxRank> new_strides;
+
+			for( size_t i = 0; i < rank_; ++i )
+			{
+				new_extents[i] = extents_[axes[i]];
+				new_strides[i] = strides_[axes[i]];
+			}
+			for( size_t i = rank_; i < MaxRank; ++i )
+			{
+				new_extents[i] = 0;
+				new_strides[i] = 0;
+			}
+
+			using ViewType = nd_span<std::remove_pointer_t<PointerType>, MaxRank>;
+			return ViewType( data_ptr, new_extents, new_strides, rank_ );
+		}
+
+		[[nodiscard]] std::array<size_type, MaxRank> make_T_axes( size_type& axes_rank ) const
+		{
+			axes_rank = rank_;
+			std::array<size_type, MaxRank> axes{};
+			for( size_t i = 0; i < rank_; ++i )
+			{
+				axes[i] = i;
+			}
+			if( rank_ >= 2 )
+			{
+				std::swap( axes[rank_ - 1], axes[rank_ - 2] );
+			}
+			return axes;
+		}
+
+		template<typename PointerType>
+		[[nodiscard]] auto squeeze_impl( PointerType data_ptr ) const
+		{
+			std::array<size_type, MaxRank> new_extents;
+			std::array<size_type, MaxRank> new_strides;
+			size_type new_rank = 0;
+
+			for( size_t i = 0; i < rank_; ++i )
+			{
+				if( extents_[i] != 1 )
+				{
+					new_extents[new_rank] = extents_[i];
+					new_strides[new_rank] = strides_[i];
+					++new_rank;
+				}
+			}
+
+			for( size_t i = new_rank; i < MaxRank; ++i )
+			{
+				new_extents[i] = 0;
+				new_strides[i] = 0;
+			}
+
+			using ViewType = nd_span<std::remove_pointer_t<PointerType>, MaxRank>;
+			return ViewType( data_ptr, new_extents, new_strides, new_rank );
 		}
 	};
 

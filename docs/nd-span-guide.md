@@ -54,6 +54,16 @@ auto sub = arr.subspan(0, 1, 3);  // rows 1-2
 sub(0, 2) = 99;  // modifies original array
 ```
 
+### Shape Operations
+
+```cpp
+auto reshaped = span.reshape(2, 6);
+auto flat = span.flatten();
+auto squeezed = span.squeeze();
+auto transposed = span.T();
+auto permuted = span.transpose({1, 0});
+```
+
 ### Flat Iteration
 
 ```cpp
@@ -151,7 +161,7 @@ auto slice = span3d.slice(0, 1);  // get layer 1 (now 2D)
 ```cpp
 size_t extent(size_t dim) const;  // Size of dimension
 size_t stride(size_t dim) const; // Stride of dimension
-std::vector<size_t> extents() const; // Active extents
+auto extents() const; // View of active extents
 size_t size() const;               // Total number of elements
 size_t rank() const;               // Number of dimensions
 T* data();                         // Raw pointer to data
@@ -204,6 +214,7 @@ void modern_process() {
 1. **Lifetime**: The span does not own the data. Ensure the underlying memory remains valid.
 2. **Bounds checking**: All access is bounds-checked (throws `std::out_of_range`)
 3. **Size matching**: Total elements must match the product of extents
+4. **Reshape/flatten**: Require row-major contiguous data
 
 ## Comparison with nd_array
 

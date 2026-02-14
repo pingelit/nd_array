@@ -47,6 +47,16 @@ matrix.fill(0.0);
 matrix.apply([](double x) { return x + 1.0; });
 ```
 
+### Shape Operations
+
+```cpp
+auto reshaped = matrix.reshape(2, 6);
+auto flat = matrix.flatten();
+auto squeezed = matrix.squeeze();
+auto transposed = matrix.T();
+auto permuted = matrix.transpose({1, 0});
+```
+
 ## Constructors
 
 ### Variadic Extents
@@ -90,6 +100,32 @@ template<typename Func>
 void apply(Func func);
 ```
 
+### Reshape
+
+```cpp
+nd_span<T> reshape(std::initializer_list<size_t> new_extents);
+nd_span<T> reshape(size_t e0, size_t e1, ...);
+```
+
+### Transpose
+
+```cpp
+nd_span<T> transpose(std::initializer_list<size_t> axes);
+nd_span<T> T();
+```
+
+### Flatten
+
+```cpp
+nd_span<T> flatten();
+```
+
+### Squeeze
+
+```cpp
+nd_span<T> squeeze();
+```
+
 ## Subviews
 
 ### Subspan
@@ -122,7 +158,7 @@ auto layer = tensor.slice(0, 1);
 size_t rank() const;
 size_t extent(size_t dim) const;
 size_t stride(size_t dim) const;
-std::vector<size_t> extents() const;
+auto extents() const; // view over active extents
 size_t size() const;
 T* data();
 const T* data() const;
@@ -151,6 +187,7 @@ const T* end() const;
 2. **Max rank**: Compile-time maximum via the `MaxRank` template parameter
 3. **Subviews are views**: Slices and subspans alias the original data
 4. **Const views**: Subviews from const arrays return `nd_span<const T>`
+5. **Reshape/flatten**: These are views and do not copy data
 
 ## Comparison with nd_span
 
