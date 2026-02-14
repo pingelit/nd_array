@@ -780,6 +780,15 @@ namespace cppa
 		/// \brief Move constructor - transfers ownership of data
 		nd_array( nd_array&& other ) noexcept = default;
 
+		/// \brief Constructs an owning array by deep-copying an nd_span
+		/// \param span Source span to copy
+		/// 	hrows std::invalid_argument if span rank exceeds MaxRank
+		explicit nd_array( const nd_span<const Ty, MaxRank>& span ) : nd_array( from_span( span ) ) {}
+
+		/// \brief Constructs an owning array by deep-copying an nd_span
+		/// \param span Source span to copy
+		explicit nd_array( const nd_span<Ty, MaxRank>& span ) : nd_array( from_span( span ) ) {}
+
 		/// \brief Copy assignment operator - performs deep copy of data
 		/// \param other Array to copy from
 		/// \return Reference to this array
@@ -808,6 +817,66 @@ namespace cppa
 		/// \param other Array to move from
 		/// \return Reference to this array
 		nd_array& operator=( nd_array&& other ) noexcept = default;
+
+		/// \brief Assigns from an nd_span by deep-copying its contents
+		/// \param span Source span to copy
+		/// \return Reference to this array
+		nd_array& operator=( const nd_span<const Ty, MaxRank>& span )
+		{
+			return *this = from_span( span );
+		}
+
+		/// \brief Assigns from an nd_span by deep-copying its contents
+		/// \param span Source span to copy
+		/// \return Reference to this array
+		nd_array& operator=( const nd_span<Ty, MaxRank>& span )
+		{
+			return *this = from_span( span );
+		}
+
+		/// \brief Creates an owning array by deep-copying an nd_span
+		/// \param span Source span to copy
+		/// \return Newly allocated array with the same contents
+		/// 	hrows std::invalid_argument if span rank exceeds MaxRank
+		static nd_array from_span( const nd_span<const Ty, MaxRank>& span )
+		{
+			nd_array result;
+			if( span.rank( ) > MaxRank )
+			{
+				throw std::invalid_argument( "Rank exceeds MaxRank" );
+			}
+
+			result.rank_ = span.rank( );
+			result.extents_.fill( 0 );
+			result.strides_.fill( 0 );
+
+			for( size_type i = 0; i < result.rank_; ++i )
+			{
+				result.extents_[i] = span.extent( i );
+			}
+
+			result.compute_strides( );
+			result.size_ = detail::compute_size<MaxRank>( result.extents_, result.rank_ );
+			if( result.size_ > 0 )
+			{
+				result.data_ = std::make_unique<Ty[]>( result.size_ );
+				size_type offset = 0;
+				for( const auto& value: span )
+				{
+					result.data_[offset++] = value;
+				}
+			}
+
+			return result;
+		}
+
+		/// \brief Creates an owning array by deep-copying an nd_span
+		/// \param span Source span to copy
+		/// \return Newly allocated array with the same contents
+		static nd_array from_span( const nd_span<Ty, MaxRank>& span )
+		{
+			return from_span( static_cast<const nd_span<const Ty, MaxRank>&>( span ) );
+		}
 
 		/// \brief Accesses an element with multi-dimensional indexing (non-const)
 		/// \tparam Indices Variadic index types (typically size_t)
