@@ -500,7 +500,7 @@ namespace cppa
 
 		/// \brief Copy constructor - performs deep copy of data
 		/// \param other Array to copy from
-		nd_array( const nd_array& other ) : rank_( other.rank_ ), size_( other.size_ ), extents_( other.extents_ ), strides_( other.strides_ )
+		nd_array( const nd_array& other ) : extents_( other.extents_ ), strides_( other.strides_ ), size_( other.size_ ), rank_( other.rank_ )
 		{
 			if( size_ > 0 )
 			{
