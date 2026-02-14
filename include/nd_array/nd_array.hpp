@@ -32,7 +32,8 @@ namespace cppa
 			/// \return Linear offset into contiguous memory
 			/// \throws std::out_of_range if any index is out of bounds
 			template<typename... Indices>
-			[[nodiscard]] static constexpr size_type compute( const std::array<size_type, MaxRank>& extents, const std::array<size_type, MaxRank>& strides, Indices... indices )
+			[[nodiscard]] static constexpr size_type compute( const std::array<size_type, MaxRank>& extents, const std::array<size_type, MaxRank>& strides,
+			                                                  Indices... indices )
 			{
 				size_type idx[]  = { static_cast<size_type>( indices )... };
 				size_type offset = 0;
@@ -83,16 +84,18 @@ namespace cppa
 	/// \brief Non-owning view over multi-dimensional data with dynamic rank
 	/// \tparam T Element type
 	/// \tparam MaxRank Maximum number of dimensions (default: 8)
-	/// 
+	///
 	/// nd_span provides a lightweight, non-owning reference to multi-dimensional data.
 	/// It's similar to std::span but for multiple dimensions, like C++23's std::mdspan.
 	/// The actual rank is determined at runtime but cannot exceed MaxRank.
-	/// 
-	/// \par Memory Layout
+	///
+	/// <b>Memory Layout</b>
+	///
 	/// Data is assumed to be in row-major (C-style) order where the last dimension
 	/// varies fastest in memory.
-	/// 
-	/// \par Typical Usage
+	///
+	/// <b>Typical Usage</b>
+	///
 	/// \code
 	/// double data[12];
 	/// nd_span<double> span(data, 3, 4);  // 3x4 matrix
@@ -102,12 +105,12 @@ namespace cppa
 	class nd_span
 	{
 	public:
-		using value_type      = T;       ///< Type of elements
-		using size_type       = size_t;  ///< Type for sizes and indices
-		using reference       = T&;      ///< Reference to element
-		using const_reference = const T&;///< Const reference to element
-		using pointer         = T*;      ///< Pointer to element
-		using const_pointer   = const T*;///< Const pointer to element
+		using value_type      = T;        ///< Type of elements
+		using size_type       = size_t;   ///< Type for sizes and indices
+		using reference       = T&;       ///< Reference to element
+		using const_reference = const T&; ///< Const reference to element
+		using pointer         = T*;       ///< Pointer to element
+		using const_pointer   = const T*; ///< Const pointer to element
 
 		/// \brief Constructs a span from raw data with explicit extents and strides
 		/// \param data Pointer to the first element
@@ -127,7 +130,7 @@ namespace cppa
 		/// \param data Pointer to the first element
 		/// \param extents Initializer list of dimension sizes {dim0, dim1, ...}
 		/// \throws std::invalid_argument if number of dimensions exceeds MaxRank
-		/// \par Example
+		/// \example
 		/// \code
 		/// double data[12];
 		/// nd_span<double> span(data, {3, 4});  // 3x4 matrix
@@ -157,7 +160,7 @@ namespace cppa
 		/// \param data Pointer to the first element
 		/// \param extents Container with dimension sizes
 		/// \throws std::invalid_argument if number of dimensions exceeds MaxRank
-		/// \par Example
+		/// \example
 		/// \code
 		/// double data[24];
 		/// std::vector<size_t> dims = {2, 3, 4};
@@ -191,7 +194,7 @@ namespace cppa
 		/// \tparam Indices Variadic index types (typically size_t or convertible to size_t)
 		/// \param data Pointer to the first element
 		/// \param indices Dimension sizes as separate arguments
-		/// \par Example
+		/// \example
 		/// \code
 		/// double data[24];
 		/// nd_span<double> span(data, 2, 3, 4);  // 2x3x4 array
@@ -220,7 +223,7 @@ namespace cppa
 		/// \param indices Multi-dimensional indices (i, j, k, ...)
 		/// \return Reference to the element at the specified location
 		/// \throws std::out_of_range if any index is out of bounds
-		/// \par Example
+		/// \example
 		/// \code
 		/// nd_span<double> span(data, 3, 4);
 		/// span(1, 2) = 5.0;  // Set element at row 1, column 2
@@ -248,7 +251,7 @@ namespace cppa
 		/// \param end Ending index in that dimension (exclusive)
 		/// \return New nd_span view of the restricted data
 		/// \throws std::out_of_range if dimension or range is invalid
-		/// \par Example
+		/// \example
 		/// \code
 		/// nd_span<double> span(data, 5, 10);
 		/// auto sub = span.subspan(0, 1, 4);  // Rows 1-3, all columns
@@ -277,7 +280,7 @@ namespace cppa
 		/// \param index Index value to fix for that dimension
 		/// \return New nd_span with rank reduced by 1
 		/// \throws std::out_of_range if dimension or index is invalid
-		/// \par Example
+		/// \example
 		/// \code
 		/// nd_span<double> span(data, 3, 4, 5);  // 3D array
 		/// auto slice = span.slice(0, 1);         // 2D array (4x5) at first dimension index 1
@@ -335,7 +338,7 @@ namespace cppa
 		/// \brief Gets the number of dimensions
 		/// \return Current rank (number of dimensions)
 		[[nodiscard]] size_type rank( ) const noexcept { return rank_; }
-		
+
 		/// \brief Gets the maximum number of dimensions supported
 		/// \return MaxRank template parameter
 		[[nodiscard]] static constexpr size_type max_rank( ) noexcept { return MaxRank; }
@@ -343,16 +346,16 @@ namespace cppa
 		/// \brief Gets a pointer to the underlying data (non-const)
 		/// \return Pointer to the first element
 		[[nodiscard]] pointer data( ) noexcept { return data_; }
-		
+
 		/// \brief Gets a pointer to the underlying data (const)
 		/// \return Const pointer to the first element
 		[[nodiscard]] const_pointer data( ) const noexcept { return data_; }
 
 	private:
-		pointer data_;                                  ///< Pointer to the first element
-		std::array<size_type, MaxRank> extents_;       ///< Size of each dimension
-		std::array<size_type, MaxRank> strides_;       ///< Stride for each dimension
-		size_type rank_;                                ///< Actual number of dimensions
+		pointer data_;                           ///< Pointer to the first element
+		std::array<size_type, MaxRank> extents_; ///< Size of each dimension
+		std::array<size_type, MaxRank> strides_; ///< Stride for each dimension
+		size_type rank_;                         ///< Actual number of dimensions
 
 		/// \brief Computes row-major strides from extents
 		constexpr void compute_strides( ) noexcept { detail::stride_computer<MaxRank>::compute( strides_, extents_, rank_ ); }
@@ -362,20 +365,23 @@ namespace cppa
 	/// \brief Owning multi-dimensional array with dynamic rank and single memory allocation
 	/// \tparam T Element type
 	/// \tparam MaxRank Maximum number of dimensions (default: 8)
-	/// 
+	///
 	/// nd_array provides a dynamically-sized multi-dimensional array with:
+	///
 	/// - Single memory allocation (on construction only)
 	/// - Runtime-determined rank (up to MaxRank)
 	/// - Runtime-determined extents for each dimension
 	/// - Row-major (C-style) memory layout
 	/// - mdspan-like interface similar to C++23
-	/// 
-	/// \par Memory Allocation
-	/// All memory is allocated once during construction using std::unique_ptr<T[]>.
+	///
+	/// <b>Memory Allocation</b>
+	///
+	/// All memory is allocated once during construction using `std::unique_ptr<T[]>`.
 	/// No further allocations occur during the object's lifetime, minimizing
 	/// allocation overhead and memory fragmentation.
-	/// 
-	/// \par Typical Usage
+	///
+	/// <b>Typical Usage</b>
+	///
 	/// \code
 	/// nd_array<double> matrix(3, 4);          // 3x4 matrix
 	/// matrix.fill(0.0);                       // Fill with zeros
@@ -386,12 +392,12 @@ namespace cppa
 	class nd_array
 	{
 	public:
-		using value_type      = T;       ///< Type of elements
-		using size_type       = size_t;  ///< Type for sizes and indices
-		using reference       = T&;      ///< Reference to element
-		using const_reference = const T&;///< Const reference to element
-		using pointer         = T*;      ///< Pointer to element
-		using const_pointer   = const T*;///< Const pointer to element
+		using value_type      = T;        ///< Type of elements
+		using size_type       = size_t;   ///< Type for sizes and indices
+		using reference       = T&;       ///< Reference to element
+		using const_reference = const T&; ///< Const reference to element
+		using pointer         = T*;       ///< Pointer to element
+		using const_pointer   = const T*; ///< Const pointer to element
 
 		/// \brief Constructs an empty array with no dimensions
 		/// \note No memory is allocated
@@ -404,7 +410,9 @@ namespace cppa
 		/// \brief Constructs an array with specified dimension sizes
 		/// \param extents Initializer list of dimension sizes {dim0, dim1, ...}
 		/// \throws std::invalid_argument if number of dimensions exceeds MaxRank
-		/// \par Example
+		///
+		/// <b>Example</b>
+		///
 		/// \code
 		/// nd_array<double> arr({3, 4, 5});  // 3x4x5 array
 		/// \endcode
@@ -434,7 +442,7 @@ namespace cppa
 		/// \tparam Container Type of container holding extents (e.g., std::vector<size_t>)
 		/// \param extents Container with dimension sizes
 		/// \throws std::invalid_argument if number of dimensions exceeds MaxRank
-		/// \par Example
+		/// \example
 		/// \code
 		/// std::vector<size_t> dims = {2, 3, 4};
 		/// nd_array<double> arr(dims);  // 2x3x4 array
@@ -466,7 +474,7 @@ namespace cppa
 		/// \brief Constructs an array with variadic dimension sizes
 		/// \tparam Indices Variadic index types (typically size_t or convertible to size_t)
 		/// \param indices Dimension sizes as separate arguments
-		/// \par Example
+		/// \example
 		/// \code
 		/// nd_array<double> arr(2, 3, 4);  // 2x3x4 array
 		/// \endcode
@@ -538,7 +546,7 @@ namespace cppa
 		/// \param indices Multi-dimensional indices (i, j, k, ...)
 		/// \return Reference to the element at the specified location
 		/// \throws std::out_of_range if any index is out of bounds
-		/// \par Example
+		/// \example
 		/// \code
 		/// nd_array<double> arr(3, 4);
 		/// arr(1, 2) = 5.0;  // Set element at row 1, column 2
@@ -566,7 +574,7 @@ namespace cppa
 		/// \param ranges Initializer list of {start, end} pairs for each dimension
 		/// \return Non-owning view (nd_span) of the restricted data
 		/// \throws std::out_of_range if too many dimensions or invalid ranges
-		/// \par Example
+		/// \example
 		/// \code
 		/// nd_array<double> arr(5, 10);
 		/// auto sub = arr.subspan({{1, 4}, {2, 8}});  // Rows 1-3, columns 2-7
@@ -602,7 +610,7 @@ namespace cppa
 		/// \param end Ending index in that dimension (exclusive)
 		/// \return Non-owning view (nd_span) of the restricted data
 		/// \throws std::out_of_range if dimension or range is invalid
-		/// \par Example
+		/// \example
 		/// \code
 		/// nd_array<double> arr(5, 10);
 		/// auto sub = arr.subspan(0, 1, 4);  // Rows 1-3, all columns
@@ -631,7 +639,7 @@ namespace cppa
 		/// \param index Index value to fix for that dimension
 		/// \return Non-owning view (nd_span) with rank reduced by 1
 		/// \throws std::out_of_range if dimension or index is invalid
-		/// \par Example
+		/// \example
 		/// \code
 		/// nd_array<double> arr(3, 4, 5);  // 3D array
 		/// auto slice = arr.slice(0, 1);    // 2D array (4x5) at first dimension index 1
@@ -689,11 +697,11 @@ namespace cppa
 		/// \brief Gets the total number of elements in the array
 		/// \return Total number of elements (product of all extents)
 		[[nodiscard]] size_type size( ) const noexcept { return size_; }
-		
+
 		/// \brief Gets the number of dimensions
 		/// \return Current rank (number of dimensions)
 		[[nodiscard]] size_type rank( ) const noexcept { return rank_; }
-		
+
 		/// \brief Gets the maximum number of dimensions supported
 		/// \return MaxRank template parameter
 		[[nodiscard]] static constexpr size_type max_rank( ) noexcept { return MaxRank; }
@@ -701,14 +709,14 @@ namespace cppa
 		/// \brief Gets a pointer to the underlying data (non-const)
 		/// \return Pointer to the first element
 		[[nodiscard]] pointer data( ) noexcept { return data_.get( ); }
-		
+
 		/// \brief Gets a pointer to the underlying data (const)
 		/// \return Const pointer to the first element
 		[[nodiscard]] const_pointer data( ) const noexcept { return data_.get( ); }
 
 		/// \brief Fills all elements with a specified value
 		/// \param value Value to fill the array with
-		/// \par Example
+		/// \example
 		/// \code
 		/// nd_array<double> arr(3, 4);
 		/// arr.fill(0.0);  // Set all elements to zero
@@ -718,7 +726,7 @@ namespace cppa
 		/// \brief Applies a function to each element
 		/// \tparam Func Function type (typically a lambda or function object)
 		/// \param func Function that takes a T and returns a T
-		/// \par Example
+		/// \example
 		/// \code
 		/// nd_array<double> arr(3, 4);
 		/// arr.fill(1.0);
@@ -734,11 +742,11 @@ namespace cppa
 		}
 
 	private:
-		std::unique_ptr<T[]> data_;                     ///< Owned data storage
-		std::array<size_type, MaxRank> extents_;       ///< Size of each dimension
-		std::array<size_type, MaxRank> strides_;       ///< Stride for each dimension
-		size_type size_;                                ///< Total number of elements
-		size_type rank_;                                ///< Actual number of dimensions
+		std::unique_ptr<T[]> data_;              ///< Owned data storage
+		std::array<size_type, MaxRank> extents_; ///< Size of each dimension
+		std::array<size_type, MaxRank> strides_; ///< Stride for each dimension
+		size_type size_;                         ///< Total number of elements
+		size_type rank_;                         ///< Actual number of dimensions
 
 		/// \brief Computes row-major strides from extents
 		constexpr void compute_strides( ) noexcept { detail::stride_computer<MaxRank>::compute( strides_, extents_, rank_ ); }

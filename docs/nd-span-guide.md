@@ -1,8 +1,9 @@
-# nd_span - Standalone Non-Owning View
+# `nd_span` - Standalone Non-Owning View
 
 ## Overview
 
-The `nd_span` class has been extracted from `nd_array` and is now a standalone template class that provides a non-owning view over multidimensional data. This allows wrapping raw C-arrays or other contiguous memory buffers with a modern C++ interface.
+The `nd_span` class provides a non-owning view over multidimensional data.
+This allows wrapping raw C-arrays or other contiguous memory buffers with a modern C++ interface.
 
 ## Key Features
 
@@ -197,45 +198,3 @@ void modern_process() {
 | Copy | Deep copy | Shallow (copies view) |
 | Use case | Data storage | View/wrapper |
 | C-interop | No | Yes |
-
-## Implementation Details
-
-The `nd_span` class:
-- Uses the same `detail::offset_computer` helper as `nd_array`
-- Computes strides in constructor (row-major layout)
-- Stores extents and strides in `std::array<size_t, MaxRank>`
-- All metadata on stack (no heap allocations)
-
-## Example: Complete C API Integration
-
-```cpp
-#include "nd_array.hpp"
-
-// External C library
-extern "C" {
-    double* allocate_image(size_t width, size_t height);
-    void free_image(double* img);
-}
-
-void process_image() {
-    // Get C-allocated memory
-    double* img = allocate_image(640, 480);
-    
-    // Wrap as nd_span
-    nd_span<double> image(img, 480, 640);
-    
-    // Process using modern C++ idioms
-    for (size_t y = 0; y < image.extent(0); ++y) {
-        for (size_t x = 0; x < image.extent(1); ++x) {
-            image(y, x) = std::clamp(image(y, x), 0.0, 1.0);
-        }
-    }
-    
-    // Get a region of interest
-    auto roi = image.subspan(0, 100, 200)  // rows 100-199
-                    .subspan(1, 50, 150);   // cols 50-149
-    
-    // Free using C API
-    free_image(img);
-}
-```

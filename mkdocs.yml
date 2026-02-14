@@ -1,0 +1,96 @@
+site_name: "nd_array"
+site_description: "N-dimensional array and nd_span C++ library."
+use_directory_urls: true
+
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: red
+    accent: red
+  features:
+    - navigation.top
+    - navigation.tabs
+    - navigation.tabs.sticky
+
+copyright: Copyright &copy; 2026 Pascal Palenda
+
+plugins:
+  - search
+  - mkdoxy:
+      projects:
+        nd_array:
+          src-dirs: include/nd_array
+          full-doc: true
+          doxy-cfg:
+            FILE_PATTERNS: "*.h*"
+            RECURSIVE: true
+            EXTRACT_ALL: true
+            QUIET: true
+
+markdown_extensions:
+  - meta
+  - attr_list
+  - md_in_html
+  - abbr
+  - admonition
+  - def_list
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - markdown.extensions.md_in_html
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.blocks.admonition:
+      types:
+        - new
+        - settings
+        - note
+        - abstract
+        - info
+        - tip
+        - success
+        - question
+        - warning
+        - failure
+        - danger
+        - bug
+        - example
+        - quote
+  - pymdownx.blocks.details:
+  - pymdownx.blocks.html:
+  - pymdownx.blocks.definition:
+  - pymdownx.blocks.tab:
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home:
+    - "index.md"
+    - Changelog: "changelog.md"
+    - License: "license.md"
+  - Reference:
+    - nd-array-guide.md
+    - nd-span-guide.md
+    - Testing: testing.md
+    - Examples: examples.md
+  - API documentation:
+      - "Class List": "nd_array/annotated.md"
+      - "Class Index": "nd_array/classes.md"
+      - "Class Hierarchy": "nd_array/hierarchy.md"
+      - "Classes":
+          - "nd_array::nd_array": "nd_array/classcppa_1_1nd__array.md"
+          - "nd_array::nd_span": "nd_array/classcppa_1_1nd__span.md"
+      - "Namespace List": "nd_array/namespaces.md"
+
