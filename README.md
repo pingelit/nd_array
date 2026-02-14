@@ -12,6 +12,7 @@ A high-performance C++ template class for n-dimensional arrays with minimal memo
 - **Row-major Layout**: Contiguous storage with predictable memory layout
 - **Zero-overhead Indexing**: Compile-time variadic template indexing
 - **Modern C++ Features**: `[[nodiscard]]`, `constexpr`, `noexcept` for better safety and performance
+- **Comprehensive Documentation**: Full Doxygen-style inline documentation with examples
 - **Comprehensive Tests**: Full unit test suite with Catch2
 
 ## Quick Start
