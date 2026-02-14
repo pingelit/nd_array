@@ -294,6 +294,121 @@ TEST_CASE("nd_span - Properties", "[nd_span][properties]")
 	}
 }
 
+TEST_CASE("nd_span - Shape transforms", "[nd_span][reshape][transpose][flatten][squeeze]")
+{
+	SECTION("Reshape and flatten")
+	{
+		int data[6] = {};
+		nd_span<int> span(data, 2, 3);
+		int value = 0;
+		for(auto& v : span)
+		{
+			v = value++;
+		}
+
+		auto reshaped = span.reshape(3, 2);
+		REQUIRE(reshaped.rank() == 2);
+		REQUIRE(reshaped.extent(0) == 3);
+		REQUIRE(reshaped.extent(1) == 2);
+		REQUIRE(reshaped(1, 0) == 2);
+
+		auto flat = span.flatten();
+		REQUIRE(flat.rank() == 1);
+		REQUIRE(flat.extent(0) == span.size());
+		REQUIRE(flat(4) == 4);
+	}
+
+	SECTION("Reshape on non-contiguous view throws")
+	{
+		int data[16] = {};
+		nd_span<int> span(data, 4, 4);
+		auto cols = span.subspan(1, 1, 3);
+		REQUIRE_THROWS_AS(cols.reshape(2, 4), std::runtime_error);
+	}
+
+	SECTION("Squeeze removes singleton dimensions")
+	{
+		int data[6] = {};
+		nd_span<int> span(data, {1, 3, 1, 2});
+		auto squeezed = span.squeeze();
+		REQUIRE(squeezed.rank() == 2);
+		REQUIRE(squeezed.extent(0) == 3);
+		REQUIRE(squeezed.extent(1) == 2);
+	}
+
+	SECTION("Transpose and T")
+	{
+		int data[6] = {};
+		nd_span<int> span(data, 2, 3);
+		int value = 0;
+		for(auto& v : span)
+		{
+			v = value++;
+		}
+
+		auto transposed = span.transpose({1, 0});
+		REQUIRE(transposed.rank() == 2);
+		REQUIRE(transposed.extent(0) == 3);
+		REQUIRE(transposed.extent(1) == 2);
+		REQUIRE(transposed(1, 0) == span(0, 1));
+
+		auto tview = span.T();
+		REQUIRE(tview.extent(0) == 3);
+		REQUIRE(tview.extent(1) == 2);
+		REQUIRE(tview(2, 1) == span(1, 2));
+	}
+}
+
+TEST_CASE("nd_span - Iterators and extents", "[nd_span][iterators][extents][stride]")
+{
+	SECTION("Stride values")
+	{
+		int data[24] = {};
+		nd_span<int> span(data, 2, 3, 4);
+		REQUIRE(span.stride(0) == 12);
+		REQUIRE(span.stride(1) == 4);
+		REQUIRE(span.stride(2) == 1);
+	}
+
+	SECTION("Extents view")
+	{
+		int data[24] = {};
+		nd_span<int> span(data, 2, 3, 4);
+		auto extents = span.extents();
+		std::vector<size_t> values(extents.begin(), extents.end());
+		REQUIRE(values.size() == 3);
+		REQUIRE(values[0] == 2);
+		REQUIRE(values[1] == 3);
+		REQUIRE(values[2] == 4);
+	}
+
+	SECTION("Flat iteration")
+	{
+		int data[6] = {};
+		nd_span<int> span(data, 2, 3);
+		int value = 1;
+		for(auto& v : span)
+		{
+			v = value++;
+		}
+		REQUIRE(span(0, 0) == 1);
+		REQUIRE(span(1, 2) == 6);
+	}
+
+	SECTION("Iterator access")
+	{
+		int data[4] = {5, 5, 5, 5};
+		nd_span<int> span(data, 2, 2);
+		REQUIRE(span.begin() != span.end());
+		REQUIRE(*span.begin() == 5);
+
+		const nd_span<int>& cspan = span;
+		REQUIRE(cspan.begin() != cspan.end());
+		REQUIRE(*cspan.begin() == 5);
+		REQUIRE(*cspan.cbegin() == 5);
+	}
+}
+
 TEST_CASE("nd_span - C-array interop", "[nd_span][c-interop]")
 {
 	SECTION("Wrapping C-array")

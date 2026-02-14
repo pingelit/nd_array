@@ -377,3 +377,125 @@ TEST_CASE("nd_array - Properties", "[nd_array][properties]")
 		REQUIRE_THROWS_AS(arr.extent(2), std::out_of_range);
 	}
 }
+
+TEST_CASE("nd_array - Shape transforms", "[nd_array][reshape][transpose][flatten][squeeze]")
+{
+	SECTION("Reshape and flatten")
+	{
+		nd_array<int> arr(2, 3);
+		int value = 0;
+		for(auto& v : arr)
+		{
+			v = value++;
+		}
+
+		auto reshaped = arr.reshape(3, 2);
+		REQUIRE(reshaped.rank() == 2);
+		REQUIRE(reshaped.extent(0) == 3);
+		REQUIRE(reshaped.extent(1) == 2);
+		REQUIRE(reshaped(1, 0) == 2);
+
+		auto flat = arr.flatten();
+		REQUIRE(flat.rank() == 1);
+		REQUIRE(flat.extent(0) == arr.size());
+		REQUIRE(flat(4) == 4);
+	}
+
+	SECTION("Squeeze removes singleton dimensions")
+	{
+		nd_array<int> arr({1, 3, 1, 2});
+		auto squeezed = arr.squeeze();
+		REQUIRE(squeezed.rank() == 2);
+		REQUIRE(squeezed.extent(0) == 3);
+		REQUIRE(squeezed.extent(1) == 2);
+	}
+
+	SECTION("Transpose and T")
+	{
+		nd_array<int> arr(2, 3);
+		int value = 0;
+		for(auto& v : arr)
+		{
+			v = value++;
+		}
+
+		auto transposed = arr.transpose({1, 0});
+		REQUIRE(transposed.rank() == 2);
+		REQUIRE(transposed.extent(0) == 3);
+		REQUIRE(transposed.extent(1) == 2);
+		REQUIRE(transposed(1, 0) == arr(0, 1));
+
+		auto tview = arr.T();
+		REQUIRE(tview.extent(0) == 3);
+		REQUIRE(tview.extent(1) == 2);
+		REQUIRE(tview(2, 1) == arr(1, 2));
+	}
+}
+
+TEST_CASE("nd_array - Iterators and extents", "[nd_array][iterators][extents][stride]")
+{
+	SECTION("Stride values")
+	{
+		nd_array<int> arr(2, 3, 4);
+		REQUIRE(arr.stride(0) == 12);
+		REQUIRE(arr.stride(1) == 4);
+		REQUIRE(arr.stride(2) == 1);
+	}
+
+	SECTION("Extents view")
+	{
+		nd_array<int> arr(2, 3, 4);
+		auto extents = arr.extents();
+		std::vector<size_t> values(extents.begin(), extents.end());
+		REQUIRE(values.size() == 3);
+		REQUIRE(values[0] == 2);
+		REQUIRE(values[1] == 3);
+		REQUIRE(values[2] == 4);
+	}
+
+	SECTION("Flat iteration")
+	{
+		nd_array<int> arr(2, 3);
+		int value = 1;
+		for(auto& v : arr)
+		{
+			v = value++;
+		}
+		REQUIRE(arr(0, 0) == 1);
+		REQUIRE(arr(1, 2) == 6);
+	}
+
+	SECTION("Iterator access")
+	{
+		nd_array<int> arr(2, 2);
+		arr.fill(5);
+		REQUIRE(arr.begin() != arr.end());
+		REQUIRE(*arr.begin() == 5);
+
+		const nd_array<int>& carr = arr;
+		REQUIRE(carr.begin() != carr.end());
+		REQUIRE(*carr.begin() == 5);
+		REQUIRE(*carr.cbegin() == 5);
+	}
+}
+
+TEST_CASE("nd_array - Span to array", "[nd_array][span][copy]")
+{
+	SECTION("Deep copy from span")
+	{
+		nd_array<int> arr(2, 3);
+		arr.fill(7);
+		nd_span<int> span(arr.data(), 2, 3);
+
+		nd_array<int> copy_from_span = nd_array<int>::from_span(span);
+		nd_array<int> copy_ctor(span);
+
+		nd_array<int> assigned;
+		assigned = span;
+
+		arr.fill(9);
+		REQUIRE(copy_from_span(0, 0) == 7);
+		REQUIRE(copy_ctor(1, 2) == 7);
+		REQUIRE(assigned(0, 1) == 7);
+	}
+}

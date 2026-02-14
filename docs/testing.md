@@ -12,9 +12,17 @@ Tests are organized with tags:
 - `[copy]` - Copy semantics
 - `[move]` - Move semantics
 - `[operations]` - Operations like fill, apply
+- `[reshape]` - Reshape tests
+- `[transpose]` - Transpose and T tests
+- `[flatten]` - Flatten tests
+- `[squeeze]` - Squeeze tests
 - `[subspan]` - Subspan tests (various dimensions, modifications, error handling)
 - `[slice]` - Slice tests (dimension reduction, modifications, error handling)
 - `[properties]` - Property query tests
+- `[iterators]` - Iteration and begin/end access
+- `[extents]` - Extents and stride access
+- `[stride]` - Stride access
+- `[span]` - Span to array conversions
 - `[const]` - Const correctness tests
 - `[c-interop]` - C API interoperability (wrapping C-arrays, std::array, std::vector)
 - `[integration]` - Integration tests
@@ -24,4 +32,6 @@ Run specific tests:
 ./nd_array_tests [nd_array]
 ./nd_array_tests [nd_span]
 ./nd_array_tests [subspan]
+./nd_array_tests [reshape]
+./nd_array_tests [iterators]
 ```
