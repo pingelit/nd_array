@@ -9,6 +9,33 @@
 #include <type_traits>
 
 
+namespace detail
+{
+	template<size_t MaxRank>
+	struct offset_computer
+	{
+		using size_type = size_t;
+
+		template<typename... Indices>
+		static size_type compute( const std::array<size_type, MaxRank>& extents,
+		                          const std::array<size_type, MaxRank>& strides,
+		                          Indices... indices )
+		{
+			size_type idx[]  = { static_cast<size_type>( indices )... };
+			size_type offset = 0;
+			for( size_t i = 0; i < sizeof...( indices ); ++i )
+			{
+				if( idx[i] >= extents[i] )
+				{
+					throw std::out_of_range( "Index out of bounds" );
+				}
+				offset += idx[i] * strides[i];
+			}
+			return offset;
+		}
+	};
+} // namespace detail
+
 template<typename T, size_t MaxRank = 8>
 class nd_array
 {
@@ -133,14 +160,14 @@ public:
 	reference operator( )( Indices... indices )
 	{
 		static_assert( sizeof...( indices ) <= MaxRank, "Too many indices" );
-		return data_[compute_offset( indices... )];
+		return data_[detail::offset_computer<MaxRank>::compute( extents_, strides_, indices... )];
 	}
 
 	template<typename... Indices>
 	const_reference operator( )( Indices... indices ) const
 	{
 		static_assert( sizeof...( indices ) <= MaxRank, "Too many indices" );
-		return data_[compute_offset( indices... )];
+		return data_[detail::offset_computer<MaxRank>::compute( extents_, strides_, indices... )];
 	}
 
 	class nd_span
@@ -157,13 +184,13 @@ public:
 		template<typename... Indices>
 		reference operator( )( Indices... indices )
 		{
-			return data_[compute_offset( indices... )];
+			return data_[detail::offset_computer<MaxRank>::compute( extents_, strides_, indices... )];
 		}
 
 		template<typename... Indices>
 		const_reference operator( )( Indices... indices ) const
 		{
-			return data_[compute_offset( indices... )];
+			return data_[detail::offset_computer<MaxRank>::compute( extents_, strides_, indices... )];
 		}
 
 		size_type extent( size_type dim ) const
@@ -185,22 +212,6 @@ public:
 		std::array<size_type, MaxRank> extents_;
 		std::array<size_type, MaxRank> strides_;
 		size_type rank_;
-
-		template<typename... Indices>
-		size_type compute_offset( Indices... indices ) const
-		{
-			size_type idx[]  = { static_cast<size_type>( indices )... };
-			size_type offset = 0;
-			for( size_t i = 0; i < sizeof...( indices ); ++i )
-			{
-				if( idx[i] >= extents_[i] )
-				{
-					throw std::out_of_range( "Index out of bounds" );
-				}
-				offset += idx[i] * strides_[i];
-			}
-			return offset;
-		}
 	};
 
 	nd_span subspan( std::initializer_list<std::pair<size_type, size_type>> ranges )
@@ -345,21 +356,5 @@ private:
 			s *= extents_[i];
 		}
 		return s;
-	}
-
-	template<typename... Indices>
-	size_type compute_offset( Indices... indices ) const
-	{
-		size_type idx[]  = { static_cast<size_type>( indices )... };
-		size_type offset = 0;
-		for( size_t i = 0; i < sizeof...( indices ); ++i )
-		{
-			if( idx[i] >= extents_[i] )
-			{
-				throw std::out_of_range( "Index out of bounds" );
-			}
-			offset += idx[i] * strides_[i];
-		}
-		return offset;
 	}
 };
