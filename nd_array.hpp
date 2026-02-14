@@ -6,6 +6,7 @@
 #include <memory>
 #include <numeric>
 #include <stdexcept>
+#include <type_traits>
 
 
 template<typename T, size_t MaxRank = 8>
@@ -36,6 +37,33 @@ public:
 		for( auto extent: extents )
 		{
 			extents_[idx++] = extent;
+		}
+		for( size_t i = rank_; i < MaxRank; ++i )
+		{
+			extents_[i] = 0;
+		}
+
+		compute_strides( );
+		size_ = compute_size( );
+		data_ = std::make_unique<T[]>( size_ );
+	}
+
+	template<typename Container>
+	nd_array( const Container& extents,
+	          typename std::enable_if<
+	              !std::is_integral<Container>::value &&
+	              !std::is_same<Container, nd_array>::value>::type* = nullptr )
+	    : rank_( extents.size( ) )
+	{
+		if( rank_ > MaxRank )
+		{
+			throw std::invalid_argument( "Rank exceeds MaxRank" );
+		}
+
+		size_t idx = 0;
+		for( auto extent: extents )
+		{
+			extents_[idx++] = static_cast<size_type>( extent );
 		}
 		for( size_t i = rank_; i < MaxRank; ++i )
 		{

@@ -2,6 +2,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <vector>
 
 
 void print_separator( const std::string& title )
@@ -11,6 +12,26 @@ void print_separator( const std::string& title )
 
 int main( )
 {
+	std::vector<int> extents = { 3, 4, 5 };
+	nd_array<int> arr3d_vec( extents );
+
+	arr3d_vec.fill( 7 );
+
+	print_separator( "3D array from vector (3x4x5) filled with 7" );
+	std::cout << "3D Array from vector extents:\n";
+	for( size_t i = 0; i < extents[0]; ++i )
+	{
+		std::cout << "Layer " << i << ":\n";
+		for( size_t j = 0; j < extents[1]; ++j )
+		{
+			for( size_t k = 0; k < extents[2]; ++k )
+			{
+				std::cout << std::setw( 4 ) << arr3d_vec( i, j, k ) << " ";
+			}
+			std::cout << "\n";
+		}
+	}
+
 	print_separator( "Creating 2D array (3x4)" );
 	nd_array<double> arr2d( 3, 4 );
 
