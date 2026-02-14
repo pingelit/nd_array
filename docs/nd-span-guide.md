@@ -144,6 +144,7 @@ auto slice = span3d.slice(0, 1);  // get layer 1 (now 2D)
 size_t extent(size_t dim) const;  // Size of dimension
 size_t rank() const;               // Number of dimensions
 T* data();                         // Raw pointer to data
+const T* data() const;             // Raw pointer to data (const)
 ```
 
 ## Memory Layout

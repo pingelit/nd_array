@@ -88,6 +88,7 @@ void apply(Func func);
 
 ```cpp
 nd_span<T> subspan(size_t dim, size_t start, size_t end);
+nd_span<const T> subspan(size_t dim, size_t start, size_t end) const;
 ```
 
 Extract a range along one dimension:
@@ -99,6 +100,7 @@ auto rows = arr.subspan(0, 1, 3);
 
 ```cpp
 nd_span<T> slice(size_t dim, size_t index);
+nd_span<const T> slice(size_t dim, size_t index) const;
 ```
 
 Fix one dimension, reducing rank:
@@ -113,6 +115,7 @@ size_t rank() const;
 size_t extent(size_t dim) const;
 size_t size() const;
 T* data();
+const T* data() const;
 ```
 
 ## Memory Layout
@@ -133,6 +136,7 @@ T* data();
 1. **Bounds checking**: Indexing throws `std::out_of_range` on invalid access
 2. **Max rank**: Compile-time maximum via the `MaxRank` template parameter
 3. **Subviews are views**: Slices and subspans alias the original data
+4. **Const views**: Subviews from const arrays return `nd_span<const T>`
 
 ## Comparison with nd_span
 

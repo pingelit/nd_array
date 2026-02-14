@@ -604,6 +604,35 @@ namespace cppa
 			return nd_span<T, MaxRank>( data_.get( ) + offset, new_extents, new_strides, rank_ );
 		}
 
+		/// \brief Creates a subspan with multiple dimension ranges (const)
+		/// \param ranges Initializer list of {start, end} pairs for each dimension
+		/// \return Non-owning view (nd_span) of the restricted data
+		/// 	hrows std::out_of_range if too many dimensions or invalid ranges
+		[[nodiscard]] nd_span<const T, MaxRank> subspan( std::initializer_list<std::pair<size_type, size_type>> ranges ) const
+		{
+			std::array<size_type, MaxRank> new_extents = extents_;
+			std::array<size_type, MaxRank> new_strides = strides_;
+			size_type offset                           = 0;
+			size_type dim                              = 0;
+
+			for( const auto& [start, end]: ranges )
+			{
+				if( dim >= rank_ )
+				{
+					throw std::out_of_range( "Too many dimensions in subspan" );
+				}
+				if( start >= extents_[dim] || end > extents_[dim] || start >= end )
+				{
+					throw std::out_of_range( "Invalid range for subspan" );
+				}
+				offset += start * strides_[dim];
+				new_extents[dim] = end - start;
+				++dim;
+			}
+
+			return nd_span<const T, MaxRank>( data_.get( ) + offset, new_extents, new_strides, rank_ );
+		}
+
 		/// \brief Creates a subspan by restricting a range along one dimension
 		/// \param dim Dimension to restrict (0-based)
 		/// \param start Starting index in that dimension (inclusive)
@@ -632,6 +661,31 @@ namespace cppa
 			size_type offset = start * strides_[dim];
 
 			return nd_span<T, MaxRank>( data_.get( ) + offset, new_extents, strides_, rank_ );
+		}
+
+		/// \brief Creates a subspan by restricting a range along one dimension (const)
+		/// \param dim Dimension to restrict (0-based)
+		/// \param start Starting index in that dimension (inclusive)
+		/// \param end Ending index in that dimension (exclusive)
+		/// \return Non-owning view (nd_span) of the restricted data
+		/// 	hrows std::out_of_range if dimension or range is invalid
+		[[nodiscard]] nd_span<const T, MaxRank> subspan( size_type dim, size_type start, size_type end ) const
+		{
+			if( dim >= rank_ )
+			{
+				throw std::out_of_range( "Dimension out of range" );
+			}
+			if( start >= extents_[dim] || end > extents_[dim] || start >= end )
+			{
+				throw std::out_of_range( "Invalid range for subspan" );
+			}
+
+			std::array<size_type, MaxRank> new_extents = extents_;
+			new_extents[dim]                           = end - start;
+
+			size_type offset = start * strides_[dim];
+
+			return nd_span<const T, MaxRank>( data_.get( ) + offset, new_extents, strides_, rank_ );
 		}
 
 		/// \brief Creates a lower-dimensional view by fixing one dimension's index
@@ -679,6 +733,48 @@ namespace cppa
 			}
 
 			return nd_span<T, MaxRank>( data_.get( ) + offset, new_extents, new_strides, new_rank );
+		}
+
+		/// \brief Creates a lower-dimensional view by fixing one dimension's index (const)
+		/// \param dim Dimension to slice (0-based)
+		/// \param index Index value to fix for that dimension
+		/// \return Non-owning view (nd_span) with rank reduced by 1
+		/// 	hrows std::out_of_range if dimension or index is invalid
+		[[nodiscard]] nd_span<const T, MaxRank> slice( size_type dim, size_type index ) const
+		{
+			if( dim >= rank_ )
+			{
+				throw std::out_of_range( "Dimension out of range" );
+			}
+			if( index >= extents_[dim] )
+			{
+				throw std::out_of_range( "Index out of bounds" );
+			}
+
+			std::array<size_type, MaxRank> new_extents;
+			std::array<size_type, MaxRank> new_strides;
+
+			size_type new_rank = rank_ - 1;
+			size_type offset   = index * strides_[dim];
+
+			size_type j = 0;
+			for( size_t i = 0; i < rank_; ++i )
+			{
+				if( i != dim )
+				{
+					new_extents[j] = extents_[i];
+					new_strides[j] = strides_[i];
+					++j;
+				}
+			}
+
+			for( size_t i = new_rank; i < MaxRank; ++i )
+			{
+				new_extents[i] = 0;
+				new_strides[i] = 0;
+			}
+
+			return nd_span<const T, MaxRank>( data_.get( ) + offset, new_extents, new_strides, new_rank );
 		}
 
 		/// \brief Gets the size of a specific dimension
