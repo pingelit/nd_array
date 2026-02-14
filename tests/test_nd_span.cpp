@@ -3,6 +3,8 @@
 #include <vector>
 #include <array>
 
+using namespace cppa;
+
 TEST_CASE("nd_span - Construction", "[nd_span][construction]")
 {
 	SECTION("Variadic constructor - 1D")

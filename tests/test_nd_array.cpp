@@ -3,6 +3,8 @@
 #include "nd_array/nd_array.hpp"
 #include <vector>
 
+using namespace cppa;
+
 TEST_CASE("nd_array - Construction", "[nd_array][construction]")
 {
 	SECTION("Default constructor")

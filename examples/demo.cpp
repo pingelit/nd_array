@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 
+using namespace cppa;
 
 void print_separator( const std::string& title )
 {
