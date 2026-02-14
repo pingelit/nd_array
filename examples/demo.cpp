@@ -292,6 +292,73 @@ void demo_dynamic_rank_array( )
 	std::cout << "Dynamic size: " << arr_dynamic.size( ) << "\n";
 }
 
+/// \brief Demonstrates reshape, transpose, flatten, and squeeze.
+void demo_shape_operations( )
+{
+	print_separator( "Shape operations" );
+	nd_array<int> arr( 2, 3 );
+	int value = 0;
+	for( auto& v: arr )
+	{
+		v = value++;
+	}
+
+	auto reshaped = arr.reshape( 3, 2 );
+	std::cout << "Reshape (3x2) element [1,0]: " << reshaped( 1, 0 ) << "\n";
+
+	auto flat = arr.flatten( );
+	std::cout << "Flatten size: " << flat.extent( 0 ) << "\n";
+
+	auto transposed = arr.transpose( { 1, 0 } );
+	std::cout << "Transpose [1,0] from [0,1]: " << transposed( 1, 0 ) << "\n";
+
+	nd_array<int> squeezed_source( { 1, 3, 1, 2 } );
+	auto squeezed = squeezed_source.squeeze( );
+	std::cout << "Squeeze rank: " << squeezed.rank( ) << "\n";
+}
+
+/// \brief Demonstrates deep copy from nd_span.
+void demo_copy_from_span( )
+{
+	print_separator( "Deep copy from nd_span" );
+	nd_array<int> arr( 2, 3 );
+	arr.fill( 7 );
+	nd_span<int> span( arr.data( ), 2, 3 );
+
+	nd_array<int> copy = nd_array<int>::from_span( span );
+	arr.fill( 9 );
+	std::cout << "Copy[0,0] after original change: " << copy( 0, 0 ) << "\n";
+}
+
+void demo_iterator_access( )
+{
+	print_separator( "Iterator access" );
+	nd_array<int> arr( 2, 2 );
+	arr.fill( 5 );
+
+	std::cout << "Iterating with non-const iterator:\n";
+	for( auto& v: arr )
+	{
+		std::cout << v << " ";
+	}
+	std::cout << "\n";
+
+	std::cout << "Modifying elements through iterator:\n";
+	for( auto& v: arr )
+	{
+		v += 1;
+		std::cout << v << " ";
+	}
+
+	const nd_array<int>& carr = arr;
+	std::cout << "Iterating with const iterator:\n";
+	for( auto& v: carr )
+	{
+		std::cout << v << " ";
+	}
+	std::cout << "\n";
+}
+
 int main( )
 {
 	demo_c_api_span( );
@@ -307,6 +374,9 @@ int main( )
 	demo_slice( arr3d );
 	demo_fill_apply_copy( );
 	demo_dynamic_rank_array( );
+	demo_shape_operations( );
+	demo_copy_from_span( );
+	demo_iterator_access( );
 
 	return 0;
 }
