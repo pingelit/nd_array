@@ -12,7 +12,7 @@ option(BUILD_EXAMPLES "Build example programs" ON)
 
 # Header-only library
 add_library(nd_array_lib INTERFACE)
-target_include_directories(nd_array_lib INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(nd_array_lib INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(nd_array_lib INTERFACE cxx_std_17)
 
 # Build examples

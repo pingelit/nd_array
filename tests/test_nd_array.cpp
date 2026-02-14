@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
-#include "../nd_array.hpp"
+#include "nd_array/nd_array.hpp"
 #include <vector>
 
 TEST_CASE("nd_array - Construction", "[nd_array][construction]")

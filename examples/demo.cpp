@@ -1,4 +1,4 @@
-#include "nd_array.hpp"
+#include "nd_array/nd_array.hpp"
 
 #include <iomanip>
 #include <iostream>
