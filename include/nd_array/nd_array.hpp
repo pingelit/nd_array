@@ -7,6 +7,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <type_traits>
+#include <vector>
 
 /// \namespace cppa
 /// \brief C++ Array namespace containing n-dimensional array and span classes
@@ -334,6 +335,23 @@ namespace cppa
 			}
 			return extents_[dim];
 		}
+
+		/// \brief Gets the stride of a specific dimension
+		/// \param dim Dimension index (0-based)
+		/// \return Stride of the specified dimension
+		/// \throws std::out_of_range if dimension is >= rank
+		[[nodiscard]] size_type stride( size_type dim ) const
+		{
+			if( dim >= rank_ )
+			{
+				throw std::out_of_range( "Dimension out of range" );
+			}
+			return strides_[dim];
+		}
+
+		/// \brief Gets the active extents as a vector sized to rank()
+		/// \return Vector of extents for the active dimensions
+		[[nodiscard]] std::vector<size_type> extents( ) const { return std::vector<size_type>( extents_.begin( ), extents_.begin( ) + rank_ ); }
 
 		/// \brief Gets the number of dimensions
 		/// \return Current rank (number of dimensions)
@@ -789,6 +807,23 @@ namespace cppa
 			}
 			return extents_[dim];
 		}
+
+		/// \brief Gets the stride of a specific dimension
+		/// \param dim Dimension index (0-based)
+		/// \return Stride of the specified dimension
+		/// \throws std::out_of_range if dimension is >= rank
+		[[nodiscard]] size_type stride( size_type dim ) const
+		{
+			if( dim >= rank_ )
+			{
+				throw std::out_of_range( "Dimension out of range" );
+			}
+			return strides_[dim];
+		}
+
+		/// \brief Gets the active extents as a vector sized to rank()
+		/// \return Vector of extents for the active dimensions
+		[[nodiscard]] std::vector<size_type> extents( ) const { return std::vector<size_type>( extents_.begin( ), extents_.begin( ) + rank_ ); }
 
 		/// \brief Gets the total number of elements in the array
 		/// \return Total number of elements (product of all extents)

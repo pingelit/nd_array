@@ -142,6 +142,8 @@ auto slice = span3d.slice(0, 1);  // get layer 1 (now 2D)
 
 ```cpp
 size_t extent(size_t dim) const;  // Size of dimension
+size_t stride(size_t dim) const; // Stride of dimension
+std::vector<size_t> extents() const; // Active extents
 size_t rank() const;               // Number of dimensions
 T* data();                         // Raw pointer to data
 const T* data() const;             // Raw pointer to data (const)

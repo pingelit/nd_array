@@ -113,6 +113,8 @@ auto layer = tensor.slice(0, 1);
 ```cpp
 size_t rank() const;
 size_t extent(size_t dim) const;
+size_t stride(size_t dim) const;
+std::vector<size_t> extents() const;
 size_t size() const;
 T* data();
 const T* data() const;
