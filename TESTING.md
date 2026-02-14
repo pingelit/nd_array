@@ -65,22 +65,40 @@ See the comprehensive test file content below covering:
 ## Building and Running Tests
 
 ### Configure
+
+By default, both tests and examples are built:
+
 ```bash
 cmake --preset windows-debug
 ```
 
+To build only tests (no examples):
+
+```bash
+cmake --preset windows-debug -DBUILD_EXAMPLES=OFF
+```
+
+Or configure manually:
+
+```bash
+cmake -B build -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF
+```
+
 ### Build
+
 ```bash
 cmake --build --preset windows-debug
 ```
 
 ### Run Tests
+
 ```bash
 cd build/windows-debug
 ctest --output-on-failure
 ```
 
 Or run the test executable directly:
+
 ```bash
 ./build/windows-debug/nd_array_tests
 ```

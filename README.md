@@ -18,15 +18,53 @@ A high-performance C++ template class for n-dimensional arrays with minimal memo
 ### Building
 
 ```bash
-# Configure with tests enabled
+# Configure with tests and examples enabled (default)
 cmake --preset windows-debug
 
 # Build
 cmake --build --preset windows-debug
 
+# Run demo
+./build/windows-debug/examples/nd_array_demo
+
 # Run tests
 cd build/windows-debug
 ctest --output-on-failure
+```
+
+### Build Options
+
+Control what gets built:
+
+```bash
+# Build only the library (no tests, no examples)
+cmake -B build -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF
+
+# Build library and tests (no examples)
+cmake -B build -DBUILD_EXAMPLES=OFF
+
+# Build library and examples (no tests)
+cmake -B build -DBUILD_TESTS=OFF
+```
+
+### Project Structure
+
+```
+nd_array/
+├── nd_array.hpp           # Main header-only library
+├── CMakeLists.txt         # Root CMake configuration
+├── CMakePresets.json      # CMake presets for different platforms
+├── README.md              # This file
+├── TESTING.md             # Testing documentation
+├── nd_span_guide.md       # nd_span usage guide
+├── cmake/                 # CMake modules
+│   └── CPM.cmake          # CPM package manager
+├── examples/              # Example programs
+│   ├── CMakeLists.txt
+│   └── demo.cpp           # Comprehensive demo
+└── tests/                 # Unit tests
+    ├── test_nd_array.cpp  # nd_array tests
+    └── test_nd_span.cpp   # nd_span tests
 ```
 
 ### Manual Test Setup
