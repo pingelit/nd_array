@@ -34,7 +34,214 @@ namespace detail
 			return offset;
 		}
 	};
+
+	template<size_t MaxRank>
+	struct stride_computer
+	{
+		using size_type = size_t;
+
+		static void compute( std::array<size_type, MaxRank>& strides,
+		                     const std::array<size_type, MaxRank>& extents,
+		                     size_type rank )
+		{
+			if( rank == 0 )
+				return;
+
+			strides[rank - 1] = 1;
+			for( size_t i = rank - 1; i > 0; --i )
+			{
+				strides[i - 1] = strides[i] * extents[i];
+			}
+
+			for( size_t i = rank; i < MaxRank; ++i )
+			{
+				strides[i] = 0;
+			}
+		}
+	};
 } // namespace detail
+
+template<typename T, size_t MaxRank = 8>
+class nd_span
+{
+public:
+	using value_type      = T;
+	using size_type       = size_t;
+	using reference       = T&;
+	using const_reference = const T&;
+	using pointer         = T*;
+	using const_pointer   = const T*;
+
+	nd_span( pointer data, const std::array<size_type, MaxRank>& extents, const std::array<size_type, MaxRank>& strides, size_type rank )
+	    : data_( data )
+	    , extents_( extents )
+	    , strides_( strides )
+	    , rank_( rank )
+	{
+	}
+
+	nd_span( pointer data, std::initializer_list<size_type> extents )
+	    : data_( data )
+	    , rank_( extents.size( ) )
+	{
+		if( rank_ > MaxRank )
+		{
+			throw std::invalid_argument( "Rank exceeds MaxRank" );
+		}
+
+		size_t idx = 0;
+		for( auto extent: extents )
+		{
+			extents_[idx++] = extent;
+		}
+		for( size_t i = rank_; i < MaxRank; ++i )
+		{
+			extents_[i] = 0;
+		}
+
+		compute_strides( );
+	}
+
+	template<typename Container>
+	nd_span( pointer data, const Container& extents,
+	         typename std::enable_if<
+	             !std::is_integral<Container>::value &&
+	             !std::is_same<Container, nd_span>::value>::type* = nullptr )
+	    : data_( data )
+	    , rank_( extents.size( ) )
+	{
+		if( rank_ > MaxRank )
+		{
+			throw std::invalid_argument( "Rank exceeds MaxRank" );
+		}
+
+		size_t idx = 0;
+		for( auto extent: extents )
+		{
+			extents_[idx++] = static_cast<size_type>( extent );
+		}
+		for( size_t i = rank_; i < MaxRank; ++i )
+		{
+			extents_[i] = 0;
+		}
+
+		compute_strides( );
+	}
+
+	template<typename... Indices>
+	nd_span( pointer data, Indices... indices )
+	    : data_( data )
+	    , rank_( sizeof...( indices ) )
+	{
+		static_assert( sizeof...( indices ) <= MaxRank, "Too many dimensions" );
+
+		size_type temp[] = { static_cast<size_type>( indices )... };
+		for( size_t i = 0; i < rank_; ++i )
+		{
+			extents_[i] = temp[i];
+		}
+		for( size_t i = rank_; i < MaxRank; ++i )
+		{
+			extents_[i] = 0;
+		}
+
+		compute_strides( );
+	}
+
+	template<typename... Indices>
+	reference operator( )( Indices... indices )
+	{
+		return data_[detail::offset_computer<MaxRank>::compute( extents_, strides_, indices... )];
+	}
+
+	template<typename... Indices>
+	const_reference operator( )( Indices... indices ) const
+	{
+		return data_[detail::offset_computer<MaxRank>::compute( extents_, strides_, indices... )];
+	}
+
+	nd_span subspan( size_type dim, size_type start, size_type end ) const
+	{
+		if( dim >= rank_ )
+		{
+			throw std::out_of_range( "Dimension out of range" );
+		}
+		if( start >= extents_[dim] || end > extents_[dim] || start >= end )
+		{
+			throw std::out_of_range( "Invalid range for subspan" );
+		}
+
+		std::array<size_type, MaxRank> new_extents = extents_;
+		new_extents[dim]                           = end - start;
+
+		size_type offset = start * strides_[dim];
+
+		return nd_span( data_ + offset, new_extents, strides_, rank_ );
+	}
+
+	nd_span slice( size_type dim, size_type index ) const
+	{
+		if( dim >= rank_ )
+		{
+			throw std::out_of_range( "Dimension out of range" );
+		}
+		if( index >= extents_[dim] )
+		{
+			throw std::out_of_range( "Index out of bounds" );
+		}
+
+		std::array<size_type, MaxRank> new_extents;
+		std::array<size_type, MaxRank> new_strides;
+
+		size_type new_rank = rank_ - 1;
+		size_type offset   = index * strides_[dim];
+
+		size_type j = 0;
+		for( size_t i = 0; i < rank_; ++i )
+		{
+			if( i != dim )
+			{
+				new_extents[j] = extents_[i];
+				new_strides[j] = strides_[i];
+				++j;
+			}
+		}
+
+		for( size_t i = new_rank; i < MaxRank; ++i )
+		{
+			new_extents[i] = 0;
+			new_strides[i] = 0;
+		}
+
+		return nd_span( data_ + offset, new_extents, new_strides, new_rank );
+	}
+
+	size_type extent( size_type dim ) const
+	{
+		if( dim >= rank_ )
+		{
+			throw std::out_of_range( "Dimension out of range" );
+		}
+		return extents_[dim];
+	}
+
+	size_type rank( ) const { return rank_; }
+	constexpr size_type max_rank( ) const { return MaxRank; }
+
+	pointer data( ) { return data_; }
+	const_pointer data( ) const { return data_; }
+
+private:
+	pointer data_;
+	std::array<size_type, MaxRank> extents_;
+	std::array<size_type, MaxRank> strides_;
+	size_type rank_;
+
+	void compute_strides( )
+	{
+		detail::stride_computer<MaxRank>::compute( strides_, extents_, rank_ );
+	}
+};
 
 template<typename T, size_t MaxRank = 8>
 class nd_array
@@ -170,51 +377,7 @@ public:
 		return data_[detail::offset_computer<MaxRank>::compute( extents_, strides_, indices... )];
 	}
 
-	class nd_span
-	{
-	public:
-		nd_span( pointer data, const std::array<size_type, MaxRank>& extents, const std::array<size_type, MaxRank>& strides, size_type rank )
-		    : data_( data )
-		    , extents_( extents )
-		    , strides_( strides )
-		    , rank_( rank )
-		{
-		}
-
-		template<typename... Indices>
-		reference operator( )( Indices... indices )
-		{
-			return data_[detail::offset_computer<MaxRank>::compute( extents_, strides_, indices... )];
-		}
-
-		template<typename... Indices>
-		const_reference operator( )( Indices... indices ) const
-		{
-			return data_[detail::offset_computer<MaxRank>::compute( extents_, strides_, indices... )];
-		}
-
-		size_type extent( size_type dim ) const
-		{
-			if( dim >= rank_ )
-			{
-				throw std::out_of_range( "Dimension out of range" );
-			}
-			return extents_[dim];
-		}
-
-		size_type rank( ) const { return rank_; }
-
-		pointer data( ) { return data_; }
-		const_pointer data( ) const { return data_; }
-
-	private:
-		pointer data_;
-		std::array<size_type, MaxRank> extents_;
-		std::array<size_type, MaxRank> strides_;
-		size_type rank_;
-	};
-
-	nd_span subspan( std::initializer_list<std::pair<size_type, size_type>> ranges )
+	nd_span<T, MaxRank> subspan( std::initializer_list<std::pair<size_type, size_type>> ranges )
 	{
 		std::array<size_type, MaxRank> new_extents = extents_;
 		std::array<size_type, MaxRank> new_strides = strides_;
@@ -236,10 +399,10 @@ public:
 			++dim;
 		}
 
-		return nd_span( data_.get( ) + offset, new_extents, new_strides, rank_ );
+		return nd_span<T, MaxRank>( data_.get( ) + offset, new_extents, new_strides, rank_ );
 	}
 
-	nd_span subspan( size_type dim, size_type start, size_type end )
+	nd_span<T, MaxRank> subspan( size_type dim, size_type start, size_type end )
 	{
 		if( dim >= rank_ )
 		{
@@ -255,10 +418,10 @@ public:
 
 		size_type offset = start * strides_[dim];
 
-		return nd_span( data_.get( ) + offset, new_extents, strides_, rank_ );
+		return nd_span<T, MaxRank>( data_.get( ) + offset, new_extents, strides_, rank_ );
 	}
 
-	nd_span slice( size_type dim, size_type index )
+	nd_span<T, MaxRank> slice( size_type dim, size_type index )
 	{
 		if( dim >= rank_ )
 		{
@@ -292,7 +455,7 @@ public:
 			new_strides[i] = 0;
 		}
 
-		return nd_span( data_.get( ) + offset, new_extents, new_strides, new_rank );
+		return nd_span<T, MaxRank>( data_.get( ) + offset, new_extents, new_strides, new_rank );
 	}
 
 	size_type extent( size_type dim ) const
@@ -331,19 +494,7 @@ private:
 
 	void compute_strides( )
 	{
-		if( rank_ == 0 )
-			return;
-
-		strides_[rank_ - 1] = 1;
-		for( size_t i = rank_ - 1; i > 0; --i )
-		{
-			strides_[i - 1] = strides_[i] * extents_[i];
-		}
-
-		for( size_t i = rank_; i < MaxRank; ++i )
-		{
-			strides_[i] = 0;
-		}
+		detail::stride_computer<MaxRank>::compute( strides_, extents_, rank_ );
 	}
 
 	size_type compute_size( ) const

@@ -10,27 +10,72 @@ void print_separator( const std::string& title )
 	std::cout << "\n=== " << title << " ===\n";
 }
 
+// Simulate a C API function that returns a raw pointer
+double* get_c_array_from_api( size_t& size )
+{
+	size        = 12;
+	double* arr = new double[size];
+	for( size_t i = 0; i < size; ++i )
+	{
+		arr[i] = i * 1.5;
+	}
+	return arr;
+}
+
 int main( )
 {
+	print_separator( "Using nd_span with C-array from C API" );
+
+	// Get raw C-array from API
+	size_t c_array_size;
+	double* c_array = get_c_array_from_api( c_array_size );
+
+	// Wrap in nd_span with shape (3, 4)
+	nd_span<double> span_from_c( c_array, 3, 4 );
+
+	std::cout << "C-array wrapped as nd_span (3x4):\n";
+	for( size_t i = 0; i < 3; ++i )
+	{
+		for( size_t j = 0; j < 4; ++j )
+		{
+			std::cout << std::setw( 6 ) << span_from_c( i, j ) << " ";
+		}
+		std::cout << "\n";
+	}
+
+	// Create subspan
+	auto sub = span_from_c.subspan( 1, 1, 3 );
+	std::cout << "\nSubspan (columns 1-2):\n";
+	for( size_t i = 0; i < sub.extent( 0 ); ++i )
+	{
+		for( size_t j = 0; j < sub.extent( 1 ); ++j )
+		{
+			std::cout << std::setw( 6 ) << sub( i, j ) << " ";
+		}
+		std::cout << "\n";
+	}
+
+	delete[] c_array;
+
+	print_separator( "Using nd_span with std::vector" );
+	std::vector<int> vec_data = { 10, 20, 30, 40, 50, 60 };
+	nd_span<int> span_from_vec( vec_data.data( ), 2, 3 );
+
+	std::cout << "Vector wrapped as nd_span (2x3):\n";
+	for( size_t i = 0; i < 2; ++i )
+	{
+		for( size_t j = 0; j < 3; ++j )
+		{
+			std::cout << std::setw( 4 ) << span_from_vec( i, j ) << " ";
+		}
+		std::cout << "\n";
+	}
+
+	print_separator( "Creating nd_array from vector of extents" );
 	std::vector<int> extents = { 3, 4, 5 };
 	nd_array<int> arr3d_vec( extents );
-
-	arr3d_vec.fill( 7 );
-
-	print_separator( "3D array from vector (3x4x5) filled with 7" );
-	std::cout << "3D Array from vector extents:\n";
-	for( size_t i = 0; i < extents[0]; ++i )
-	{
-		std::cout << "Layer " << i << ":\n";
-		for( size_t j = 0; j < extents[1]; ++j )
-		{
-			for( size_t k = 0; k < extents[2]; ++k )
-			{
-				std::cout << std::setw( 4 ) << arr3d_vec( i, j, k ) << " ";
-			}
-			std::cout << "\n";
-		}
-	}
+	std::cout << "Array created with rank: " << arr3d_vec.rank( ) << "\n";
+	std::cout << "Array size: " << arr3d_vec.size( ) << "\n";
 
 	print_separator( "Creating 2D array (3x4)" );
 	nd_array<double> arr2d( 3, 4 );
