@@ -11,6 +11,46 @@ A high-performance C++ template class for n-dimensional arrays with minimal memo
 - **Subviews/Subspans**: Efficient non-owning views into array data
 - **Row-major Layout**: Contiguous storage with predictable memory layout
 - **Zero-overhead Indexing**: Compile-time variadic template indexing
+- **Comprehensive Tests**: Full unit test suite with Catch2
+
+## Quick Start
+
+### Building
+
+```bash
+# Configure with tests enabled
+cmake --preset windows-debug
+
+# Build
+cmake --build --preset windows-debug
+
+# Run tests
+cd build/windows-debug
+ctest --output-on-failure
+```
+
+### Manual Test Setup
+
+If automatic directory creation fails, manually create:
+
+1. **Directory structure:**
+   ```
+   nd_array/
+   ├── cmake/
+   └── tests/
+   ```
+
+2. **Copy files:**
+   - Copy `CPM.cmake.txt` content to `cmake/CPM.cmake`
+   - Copy `test_nd_array.cpp.txt` content to `tests/test_nd_array.cpp`
+   - Copy `test_nd_span.cpp.txt` content to `tests/test_nd_span.cpp`
+
+3. **Build:**
+   ```bash
+   cmake --preset windows-debug
+   cmake --build --preset windows-debug
+   ctest --output-on-failure
+   ```
 
 ## Basic Usage
 
