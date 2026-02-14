@@ -19,7 +19,7 @@ namespace cppa
 			using size_type = size_t;
 
 			template<typename... Indices>
-			static size_type compute( const std::array<size_type, MaxRank>& extents, const std::array<size_type, MaxRank>& strides, Indices... indices )
+			[[nodiscard]] static constexpr size_type compute( const std::array<size_type, MaxRank>& extents, const std::array<size_type, MaxRank>& strides, Indices... indices )
 			{
 				size_type idx[]  = { static_cast<size_type>( indices )... };
 				size_type offset = 0;
@@ -40,7 +40,7 @@ namespace cppa
 		{
 			using size_type = size_t;
 
-			static void compute( std::array<size_type, MaxRank>& strides, const std::array<size_type, MaxRank>& extents, size_type rank )
+			static constexpr void compute( std::array<size_type, MaxRank>& strides, const std::array<size_type, MaxRank>& extents, size_type rank ) noexcept
 			{
 				if( rank == 0 )
 					return;
@@ -70,7 +70,7 @@ namespace cppa
 		using pointer         = T*;
 		using const_pointer   = const T*;
 
-		nd_span( pointer data, const std::array<size_type, MaxRank>& extents, const std::array<size_type, MaxRank>& strides, size_type rank )
+		constexpr nd_span( pointer data, const std::array<size_type, MaxRank>& extents, const std::array<size_type, MaxRank>& strides, size_type rank ) noexcept
 		    : data_( data )
 		    , extents_( extents )
 		    , strides_( strides )
@@ -142,18 +142,18 @@ namespace cppa
 		}
 
 		template<typename... Indices>
-		reference operator( )( Indices... indices )
+		[[nodiscard]] reference operator( )( Indices... indices )
 		{
 			return data_[detail::offset_computer<MaxRank>::compute( extents_, strides_, indices... )];
 		}
 
 		template<typename... Indices>
-		const_reference operator( )( Indices... indices ) const
+		[[nodiscard]] const_reference operator( )( Indices... indices ) const
 		{
 			return data_[detail::offset_computer<MaxRank>::compute( extents_, strides_, indices... )];
 		}
 
-		nd_span subspan( size_type dim, size_type start, size_type end ) const
+		[[nodiscard]] nd_span subspan( size_type dim, size_type start, size_type end ) const
 		{
 			if( dim >= rank_ )
 			{
@@ -172,7 +172,7 @@ namespace cppa
 			return nd_span( data_ + offset, new_extents, strides_, rank_ );
 		}
 
-		nd_span slice( size_type dim, size_type index ) const
+		[[nodiscard]] nd_span slice( size_type dim, size_type index ) const
 		{
 			if( dim >= rank_ )
 			{
@@ -209,7 +209,7 @@ namespace cppa
 			return nd_span( data_ + offset, new_extents, new_strides, new_rank );
 		}
 
-		size_type extent( size_type dim ) const
+		[[nodiscard]] size_type extent( size_type dim ) const
 		{
 			if( dim >= rank_ )
 			{
@@ -218,11 +218,11 @@ namespace cppa
 			return extents_[dim];
 		}
 
-		size_type rank( ) const { return rank_; }
-		constexpr size_type max_rank( ) const { return MaxRank; }
+		[[nodiscard]] size_type rank( ) const noexcept { return rank_; }
+		[[nodiscard]] static constexpr size_type max_rank( ) noexcept { return MaxRank; }
 
-		pointer data( ) { return data_; }
-		const_pointer data( ) const { return data_; }
+		[[nodiscard]] pointer data( ) noexcept { return data_; }
+		[[nodiscard]] const_pointer data( ) const noexcept { return data_; }
 
 	private:
 		pointer data_;
@@ -230,7 +230,7 @@ namespace cppa
 		std::array<size_type, MaxRank> strides_;
 		size_type rank_;
 
-		void compute_strides( ) { detail::stride_computer<MaxRank>::compute( strides_, extents_, rank_ ); }
+		constexpr void compute_strides( ) noexcept { detail::stride_computer<MaxRank>::compute( strides_, extents_, rank_ ); }
 	};
 
 	template<typename T, size_t MaxRank = 8>
@@ -244,7 +244,7 @@ namespace cppa
 		using pointer         = T*;
 		using const_pointer   = const T*;
 
-		nd_array( ) : data_( nullptr ), size_( 0 ), rank_( 0 )
+		nd_array( ) noexcept : data_( nullptr ), size_( 0 ), rank_( 0 )
 		{
 			extents_.fill( 0 );
 			strides_.fill( 0 );
@@ -351,20 +351,20 @@ namespace cppa
 		nd_array& operator=( nd_array&& other ) noexcept = default;
 
 		template<typename... Indices>
-		reference operator( )( Indices... indices )
+		[[nodiscard]] reference operator( )( Indices... indices )
 		{
 			static_assert( sizeof...( indices ) <= MaxRank, "Too many indices" );
 			return data_[detail::offset_computer<MaxRank>::compute( extents_, strides_, indices... )];
 		}
 
 		template<typename... Indices>
-		const_reference operator( )( Indices... indices ) const
+		[[nodiscard]] const_reference operator( )( Indices... indices ) const
 		{
 			static_assert( sizeof...( indices ) <= MaxRank, "Too many indices" );
 			return data_[detail::offset_computer<MaxRank>::compute( extents_, strides_, indices... )];
 		}
 
-		nd_span<T, MaxRank> subspan( std::initializer_list<std::pair<size_type, size_type>> ranges )
+		[[nodiscard]] nd_span<T, MaxRank> subspan( std::initializer_list<std::pair<size_type, size_type>> ranges )
 		{
 			std::array<size_type, MaxRank> new_extents = extents_;
 			std::array<size_type, MaxRank> new_strides = strides_;
@@ -389,7 +389,7 @@ namespace cppa
 			return nd_span<T, MaxRank>( data_.get( ) + offset, new_extents, new_strides, rank_ );
 		}
 
-		nd_span<T, MaxRank> subspan( size_type dim, size_type start, size_type end )
+		[[nodiscard]] nd_span<T, MaxRank> subspan( size_type dim, size_type start, size_type end )
 		{
 			if( dim >= rank_ )
 			{
@@ -408,7 +408,7 @@ namespace cppa
 			return nd_span<T, MaxRank>( data_.get( ) + offset, new_extents, strides_, rank_ );
 		}
 
-		nd_span<T, MaxRank> slice( size_type dim, size_type index )
+		[[nodiscard]] nd_span<T, MaxRank> slice( size_type dim, size_type index )
 		{
 			if( dim >= rank_ )
 			{
@@ -445,7 +445,7 @@ namespace cppa
 			return nd_span<T, MaxRank>( data_.get( ) + offset, new_extents, new_strides, new_rank );
 		}
 
-		size_type extent( size_type dim ) const
+		[[nodiscard]] size_type extent( size_type dim ) const
 		{
 			if( dim >= rank_ )
 			{
@@ -454,12 +454,12 @@ namespace cppa
 			return extents_[dim];
 		}
 
-		size_type size( ) const { return size_; }
-		size_type rank( ) const { return rank_; }
-		constexpr size_type max_rank( ) const { return MaxRank; }
+		[[nodiscard]] size_type size( ) const noexcept { return size_; }
+		[[nodiscard]] size_type rank( ) const noexcept { return rank_; }
+		[[nodiscard]] static constexpr size_type max_rank( ) noexcept { return MaxRank; }
 
-		pointer data( ) { return data_.get( ); }
-		const_pointer data( ) const { return data_.get( ); }
+		[[nodiscard]] pointer data( ) noexcept { return data_.get( ); }
+		[[nodiscard]] const_pointer data( ) const noexcept { return data_.get( ); }
 
 		void fill( const T& value ) { std::fill( data_.get( ), data_.get( ) + size_, value ); }
 
@@ -479,9 +479,9 @@ namespace cppa
 		size_type size_;
 		size_type rank_;
 
-		void compute_strides( ) { detail::stride_computer<MaxRank>::compute( strides_, extents_, rank_ ); }
+		constexpr void compute_strides( ) noexcept { detail::stride_computer<MaxRank>::compute( strides_, extents_, rank_ ); }
 
-		size_type compute_size( ) const
+		[[nodiscard]] constexpr size_type compute_size( ) const noexcept
 		{
 			if( rank_ == 0 )
 				return 0;

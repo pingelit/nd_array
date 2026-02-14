@@ -11,6 +11,7 @@ A high-performance C++ template class for n-dimensional arrays with minimal memo
 - **Subviews/Subspans**: Efficient non-owning views into array data
 - **Row-major Layout**: Contiguous storage with predictable memory layout
 - **Zero-overhead Indexing**: Compile-time variadic template indexing
+- **Modern C++ Features**: `[[nodiscard]]`, `constexpr`, `noexcept` for better safety and performance
 - **Comprehensive Tests**: Full unit test suite with Catch2
 
 ## Quick Start
@@ -261,7 +262,17 @@ cmake --build .
 ## Requirements
 
 - C++17 or later
-- CMake 3.10 or later
+- CMake 3.14 or later
+
+## Documentation
+
+- **[README.md](README.md)** - This file, overview and basic usage
+- **[TESTING.md](TESTING.md)** - Testing setup and execution
+- **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)** - Detailed project structure
+- **[BUILD_GUIDE.md](BUILD_GUIDE.md)** - Build configuration guide
+- **[MODERN_CPP.md](MODERN_CPP.md)** - Modern C++ features explained
+- **[nd_span_guide.md](nd_span_guide.md)** - Complete nd_span documentation
+- **[examples/README.md](examples/README.md)** - Examples documentation
 
 ## License
 
