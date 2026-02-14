@@ -353,6 +353,10 @@ namespace cppa
 		/// \return Vector of extents for the active dimensions
 		[[nodiscard]] std::vector<size_type> extents( ) const { return std::vector<size_type>( extents_.begin( ), extents_.begin( ) + rank_ ); }
 
+		/// \brief Gets the total number of elements in the span
+		/// \return Total number of elements (product of all extents)
+		[[nodiscard]] size_type size( ) const noexcept { return compute_size( ); }
+
 		/// \brief Gets the number of dimensions
 		/// \return Current rank (number of dimensions)
 		[[nodiscard]] size_type rank( ) const noexcept { return rank_; }
@@ -369,6 +373,24 @@ namespace cppa
 		/// \return Const pointer to the first element
 		[[nodiscard]] const_pointer data( ) const noexcept { return data_; }
 
+		/// \brief Returns a pointer to the first element for flat iteration
+		[[nodiscard]] pointer begin( ) noexcept { return data_; }
+
+		/// \brief Returns a pointer past the last element for flat iteration
+		[[nodiscard]] pointer end( ) noexcept { return data_ + size( ); }
+
+		/// \brief Returns a const pointer to the first element for flat iteration
+		[[nodiscard]] const_pointer begin( ) const noexcept { return data_; }
+
+		/// \brief Returns a const pointer past the last element for flat iteration
+		[[nodiscard]] const_pointer end( ) const noexcept { return data_ + size( ); }
+
+		/// \brief Returns a const pointer to the first element for flat iteration
+		[[nodiscard]] const_pointer cbegin( ) const noexcept { return data_; }
+
+		/// \brief Returns a const pointer past the last element for flat iteration
+		[[nodiscard]] const_pointer cend( ) const noexcept { return data_ + size( ); }
+
 	private:
 		pointer data_;                           ///< Pointer to the first element
 		std::array<size_type, MaxRank> extents_; ///< Size of each dimension
@@ -377,6 +399,19 @@ namespace cppa
 
 		/// \brief Computes row-major strides from extents
 		constexpr void compute_strides( ) noexcept { detail::stride_computer<MaxRank>::compute( strides_, extents_, rank_ ); }
+
+		/// \brief Computes total number of elements from extents
+		[[nodiscard]] constexpr size_type compute_size( ) const noexcept
+		{
+			if( rank_ == 0 )
+				return 0;
+			size_type s = 1;
+			for( size_t i = 0; i < rank_; ++i )
+			{
+				s *= extents_[i];
+			}
+			return s;
+		}
 	};
 
 	/// \class nd_array
@@ -844,6 +879,24 @@ namespace cppa
 		/// \brief Gets a pointer to the underlying data (const)
 		/// \return Const pointer to the first element
 		[[nodiscard]] const_pointer data( ) const noexcept { return data_.get( ); }
+
+		/// \brief Returns a pointer to the first element for flat iteration
+		[[nodiscard]] pointer begin( ) noexcept { return data_.get( ); }
+
+		/// \brief Returns a pointer past the last element for flat iteration
+		[[nodiscard]] pointer end( ) noexcept { return data_.get( ) + size_; }
+
+		/// \brief Returns a const pointer to the first element for flat iteration
+		[[nodiscard]] const_pointer begin( ) const noexcept { return data_.get( ); }
+
+		/// \brief Returns a const pointer past the last element for flat iteration
+		[[nodiscard]] const_pointer end( ) const noexcept { return data_.get( ) + size_; }
+
+		/// \brief Returns a const pointer to the first element for flat iteration
+		[[nodiscard]] const_pointer cbegin( ) const noexcept { return data_.get( ); }
+
+		/// \brief Returns a const pointer past the last element for flat iteration
+		[[nodiscard]] const_pointer cend( ) const noexcept { return data_.get( ) + size_; }
 
 		/// \brief Fills all elements with a specified value
 		/// \param value Value to fill the array with

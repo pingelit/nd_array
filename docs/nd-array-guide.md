@@ -32,6 +32,14 @@ matrix(1, 2) = 42.0;
 double val = matrix(1, 2);
 ```
 
+### Flat Iteration
+
+```cpp
+for (auto& value : matrix) {
+	value += 1.0;
+}
+```
+
 ### Filling and Applying
 
 ```cpp
@@ -118,6 +126,10 @@ std::vector<size_t> extents() const;
 size_t size() const;
 T* data();
 const T* data() const;
+T* begin();
+T* end();
+const T* begin() const;
+const T* end() const;
 ```
 
 ## Memory Layout

@@ -54,6 +54,14 @@ auto sub = arr.subspan(0, 1, 3);  // rows 1-2
 sub(0, 2) = 99;  // modifies original array
 ```
 
+### Flat Iteration
+
+```cpp
+for (const auto& value : span) {
+    std::cout << value << "\n";
+}
+```
+
 ## Constructors
 
 ### Basic Constructor (variadic)
@@ -144,9 +152,14 @@ auto slice = span3d.slice(0, 1);  // get layer 1 (now 2D)
 size_t extent(size_t dim) const;  // Size of dimension
 size_t stride(size_t dim) const; // Stride of dimension
 std::vector<size_t> extents() const; // Active extents
+size_t size() const;               // Total number of elements
 size_t rank() const;               // Number of dimensions
 T* data();                         // Raw pointer to data
 const T* data() const;             // Raw pointer to data (const)
+T* begin();
+T* end();
+const T* begin() const;
+const T* end() const;
 ```
 
 ## Memory Layout
