@@ -145,7 +145,7 @@ namespace cppa
 			{
 				throw std::invalid_argument( "Permutation size must be <= MaxRank" );
 			}
-			std::array<bool, MaxRank> seen{};
+			std::array<bool, MaxRank> seen { };
 			for( size_t i = 0; i < rank; ++i )
 			{
 				const size_t axis = axes[i];
@@ -184,7 +184,7 @@ namespace cppa
 	{
 	public:
 		using value_type      = Ty;        ///< Type of elements
-		using size_type       = size_t;   ///< Type for sizes and indices
+		using size_type       = size_t;    ///< Type for sizes and indices
 		using reference       = Ty&;       ///< Reference to element
 		using const_reference = const Ty&; ///< Const reference to element
 		using pointer         = Ty*;       ///< Pointer to element
@@ -405,10 +405,7 @@ namespace cppa
 		/// \return Reshaped view
 		/// \throws std::invalid_argument if rank exceeds MaxRank or size mismatch
 		/// \throws std::runtime_error if the view is not contiguous
-		[[nodiscard]] nd_span reshape( std::initializer_list<size_type> new_extents ) const
-		{
-			return reshape_impl( new_extents.begin( ), new_extents.size( ) );
-		}
+		[[nodiscard]] nd_span reshape( std::initializer_list<size_type> new_extents ) const { return reshape_impl( new_extents.begin( ), new_extents.size( ) ); }
 
 		/// \brief Reshapes the span with variadic extents (view-only, row-major contiguous required)
 		/// \tparam Indices Variadic extent types
@@ -425,17 +422,14 @@ namespace cppa
 		/// \param axes Permutation of axes
 		/// \return Transposed view
 		/// 	hrows std::invalid_argument if permutation is invalid
-		[[nodiscard]] nd_span transpose( std::initializer_list<size_type> axes ) const
-		{
-			return transpose_impl( axes.begin( ), axes.size( ) );
-		}
+		[[nodiscard]] nd_span transpose( std::initializer_list<size_type> axes ) const { return transpose_impl( axes.begin( ), axes.size( ) ); }
 
 		/// \brief Returns a transposed view by swapping the last two axes
 		/// \return Transposed view
 		[[nodiscard]] nd_span T( ) const
 		{
 			size_type axes_rank = 0;
-			auto axes = make_T_axes( axes_rank );
+			auto axes           = make_T_axes( axes_rank );
 			return transpose_impl( axes.data( ), axes_rank );
 		}
 
@@ -571,7 +565,7 @@ namespace cppa
 				throw std::runtime_error( "Reshape requires contiguous data" );
 			}
 
-			std::array<size_type, MaxRank> new_extents_array{};
+			std::array<size_type, MaxRank> new_extents_array { };
 			for( size_t i = 0; i < new_rank; ++i )
 			{
 				new_extents_array[i] = new_extents[i];
@@ -583,7 +577,7 @@ namespace cppa
 				throw std::invalid_argument( "Reshape size mismatch" );
 			}
 
-			std::array<size_type, MaxRank> new_strides{};
+			std::array<size_type, MaxRank> new_strides { };
 			detail::stride_computer<MaxRank>::compute( new_strides, new_extents_array, new_rank );
 
 			return nd_span( data_, new_extents_array, new_strides, new_rank );
@@ -616,7 +610,7 @@ namespace cppa
 		[[nodiscard]] std::array<size_type, MaxRank> make_T_axes( size_type& axes_rank ) const
 		{
 			axes_rank = rank_;
-			std::array<size_type, MaxRank> axes{};
+			std::array<size_type, MaxRank> axes { };
 			for( size_t i = 0; i < rank_; ++i )
 			{
 				axes[i] = i;
@@ -661,7 +655,7 @@ namespace cppa
 	{
 	public:
 		using value_type      = Ty;        ///< Type of elements
-		using size_type       = size_t;   ///< Type for sizes and indices
+		using size_type       = size_t;    ///< Type for sizes and indices
 		using reference       = Ty&;       ///< Reference to element
 		using const_reference = const Ty&; ///< Const reference to element
 		using pointer         = Ty*;       ///< Pointer to element
@@ -1078,10 +1072,7 @@ namespace cppa
 		/// \brief Reshapes the array view (row-major contiguous)
 		/// \param new_extents New shape extents
 		/// \return Reshaped view
-		[[nodiscard]] nd_span<Ty, MaxRank> reshape( std::initializer_list<size_type> new_extents )
-		{
-			return reshape_impl( new_extents.begin( ), new_extents.size( ) );
-		}
+		[[nodiscard]] nd_span<Ty, MaxRank> reshape( std::initializer_list<size_type> new_extents ) { return reshape_impl( new_extents.begin( ), new_extents.size( ) ); }
 
 		/// \brief Reshapes the array view (row-major contiguous)
 		/// \param new_extents New shape extents
@@ -1116,10 +1107,7 @@ namespace cppa
 		/// \brief Returns a transposed view using an axis permutation
 		/// \param axes Permutation of axes
 		/// \return Transposed view
-		[[nodiscard]] nd_span<Ty, MaxRank> transpose( std::initializer_list<size_type> axes )
-		{
-			return transpose_impl( axes.begin( ), axes.size( ), data_.get( ) );
-		}
+		[[nodiscard]] nd_span<Ty, MaxRank> transpose( std::initializer_list<size_type> axes ) { return transpose_impl( axes.begin( ), axes.size( ), data_.get( ) ); }
 
 		/// \brief Returns a transposed view using an axis permutation (const)
 		/// \param axes Permutation of axes
@@ -1134,7 +1122,7 @@ namespace cppa
 		[[nodiscard]] nd_span<Ty, MaxRank> T( )
 		{
 			size_type axes_rank = 0;
-			auto axes = make_T_axes( axes_rank );
+			auto axes           = make_T_axes( axes_rank );
 			return transpose_impl( axes.data( ), axes_rank, data_.get( ) );
 		}
 
@@ -1143,7 +1131,7 @@ namespace cppa
 		[[nodiscard]] nd_span<const Ty, MaxRank> T( ) const
 		{
 			size_type axes_rank = 0;
-			auto axes = make_T_axes( axes_rank );
+			auto axes           = make_T_axes( axes_rank );
 			return transpose_impl( axes.data( ), axes_rank, data_.get( ) );
 		}
 
@@ -1157,17 +1145,11 @@ namespace cppa
 
 		/// \brief Removes dimensions of extent 1
 		/// \return View with singleton dimensions removed
-		[[nodiscard]] nd_span<Ty, MaxRank> squeeze( )
-		{
-			return squeeze_impl( data_.get( ) );
-		}
+		[[nodiscard]] nd_span<Ty, MaxRank> squeeze( ) { return squeeze_impl( data_.get( ) ); }
 
 		/// \brief Removes dimensions of extent 1 (const)
 		/// \return Const view with singleton dimensions removed
-		[[nodiscard]] nd_span<const Ty, MaxRank> squeeze( ) const
-		{
-			return squeeze_impl( data_.get( ) );
-		}
+		[[nodiscard]] nd_span<const Ty, MaxRank> squeeze( ) const { return squeeze_impl( data_.get( ) ); }
 
 		/// \brief Gets the size of a specific dimension
 		/// \param dim Dimension index (0-based)
@@ -1331,7 +1313,7 @@ namespace cppa
 				throw std::invalid_argument( "Rank exceeds MaxRank" );
 			}
 
-			std::array<size_type, MaxRank> new_extents_array{};
+			std::array<size_type, MaxRank> new_extents_array { };
 			for( size_t i = 0; i < new_rank; ++i )
 			{
 				new_extents_array[i] = new_extents[i];
@@ -1343,7 +1325,7 @@ namespace cppa
 				throw std::invalid_argument( "Reshape size mismatch" );
 			}
 
-			std::array<size_type, MaxRank> new_strides{};
+			std::array<size_type, MaxRank> new_strides { };
 			detail::stride_computer<MaxRank>::compute( new_strides, new_extents_array, new_rank );
 			return nd_span<Ty, MaxRank>( data_.get( ), new_extents_array, new_strides, new_rank );
 		}
@@ -1355,7 +1337,7 @@ namespace cppa
 				throw std::invalid_argument( "Rank exceeds MaxRank" );
 			}
 
-			std::array<size_type, MaxRank> new_extents_array{};
+			std::array<size_type, MaxRank> new_extents_array { };
 			for( size_t i = 0; i < new_rank; ++i )
 			{
 				new_extents_array[i] = new_extents[i];
@@ -1367,7 +1349,7 @@ namespace cppa
 				throw std::invalid_argument( "Reshape size mismatch" );
 			}
 
-			std::array<size_type, MaxRank> new_strides{};
+			std::array<size_type, MaxRank> new_strides { };
 			detail::stride_computer<MaxRank>::compute( new_strides, new_extents_array, new_rank );
 			return nd_span<const Ty, MaxRank>( data_.get( ), new_extents_array, new_strides, new_rank );
 		}
@@ -1402,7 +1384,7 @@ namespace cppa
 		[[nodiscard]] std::array<size_type, MaxRank> make_T_axes( size_type& axes_rank ) const
 		{
 			axes_rank = rank_;
-			std::array<size_type, MaxRank> axes{};
+			std::array<size_type, MaxRank> axes { };
 			for( size_t i = 0; i < rank_; ++i )
 			{
 				axes[i] = i;
