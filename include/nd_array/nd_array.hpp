@@ -821,62 +821,23 @@ namespace cppa
 		/// \brief Assigns from an nd_span by deep-copying its contents
 		/// \param span Source span to copy
 		/// \return Reference to this array
-		nd_array& operator=( const nd_span<const Ty, MaxRank>& span )
-		{
-			return *this = from_span( span );
-		}
+		nd_array& operator=( const nd_span<const Ty, MaxRank>& span ) { return *this = from_span( span ); }
 
 		/// \brief Assigns from an nd_span by deep-copying its contents
 		/// \param span Source span to copy
 		/// \return Reference to this array
-		nd_array& operator=( const nd_span<Ty, MaxRank>& span )
-		{
-			return *this = from_span( span );
-		}
+		nd_array& operator=( const nd_span<Ty, MaxRank>& span ) { return *this = from_span( span ); }
 
 		/// \brief Creates an owning array by deep-copying an nd_span
 		/// \param span Source span to copy
 		/// \return Newly allocated array with the same contents
 		/// 	hrows std::invalid_argument if span rank exceeds MaxRank
-		static nd_array from_span( const nd_span<const Ty, MaxRank>& span )
-		{
-			nd_array result;
-			if( span.rank( ) > MaxRank )
-			{
-				throw std::invalid_argument( "Rank exceeds MaxRank" );
-			}
-
-			result.rank_ = span.rank( );
-			result.extents_.fill( 0 );
-			result.strides_.fill( 0 );
-
-			for( size_type i = 0; i < result.rank_; ++i )
-			{
-				result.extents_[i] = span.extent( i );
-			}
-
-			result.compute_strides( );
-			result.size_ = detail::compute_size<MaxRank>( result.extents_, result.rank_ );
-			if( result.size_ > 0 )
-			{
-				result.data_ = std::make_unique<Ty[]>( result.size_ );
-				size_type offset = 0;
-				for( const auto& value: span )
-				{
-					result.data_[offset++] = value;
-				}
-			}
-
-			return result;
-		}
+		static nd_array from_span( const nd_span<const Ty, MaxRank>& span ) { return from_span_impl( span ); }
 
 		/// \brief Creates an owning array by deep-copying an nd_span
 		/// \param span Source span to copy
 		/// \return Newly allocated array with the same contents
-		static nd_array from_span( const nd_span<Ty, MaxRank>& span )
-		{
-			return from_span( static_cast<const nd_span<const Ty, MaxRank>&>( span ) );
-		}
+		static nd_array from_span( const nd_span<Ty, MaxRank>& span ) { return from_span_impl( span ); }
 
 		/// \brief Accesses an element with multi-dimensional indexing (non-const)
 		/// \tparam Indices Variadic index types (typically size_t)
@@ -1304,11 +1265,47 @@ namespace cppa
 		}
 
 	private:
-		std::unique_ptr<Ty[]> data_;              ///< Owned data storage
+		std::unique_ptr<Ty[]> data_;             ///< Owned data storage
 		std::array<size_type, MaxRank> extents_; ///< Size of each dimension
 		std::array<size_type, MaxRank> strides_; ///< Stride for each dimension
 		size_type size_;                         ///< Total number of elements
 		size_type rank_;                         ///< Actual number of dimensions
+
+		/// \brief Helper function to create an nd_array from an nd_span
+		template<typename U>
+		static nd_array from_span_impl( const nd_span<U, MaxRank>& span )
+		{
+			static_assert( std::is_convertible<U, Ty>::value, "Span element type must be convertible" );
+
+			nd_array result;
+			if( span.rank( ) > MaxRank )
+			{
+				throw std::invalid_argument( "Rank exceeds MaxRank" );
+			}
+
+			result.rank_ = span.rank( );
+			result.extents_.fill( 0 );
+			result.strides_.fill( 0 );
+
+			for( size_type i = 0; i < result.rank_; ++i )
+			{
+				result.extents_[i] = span.extent( i );
+			}
+
+			result.compute_strides( );
+			result.size_ = detail::compute_size<MaxRank>( result.extents_, result.rank_ );
+			if( result.size_ > 0 )
+			{
+				result.data_     = std::make_unique<Ty[]>( result.size_ );
+				size_type offset = 0;
+				for( const auto& value: span )
+				{
+					result.data_[offset++] = static_cast<Ty>( value );
+				}
+			}
+
+			return result;
+		}
 
 		/// \brief Computes row-major strides from extents
 		constexpr void compute_strides( ) noexcept { detail::stride_computer<MaxRank>::compute( strides_, extents_, rank_ ); }
