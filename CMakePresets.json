@@ -1,178 +1,218 @@
 {
-  "version": 3,
-  "cmakeMinimumRequired": {
-    "major": 3,
-    "minor": 21,
-    "patch": 0
-  },
-  "configurePresets": [
-    {
-      "name": "windows-base",
-      "hidden": true,
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}",
-      "cacheVariables": {
-        "CMAKE_CXX_STANDARD": "17",
-        "CMAKE_CXX_STANDARD_REQUIRED": "ON",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "BUILD_TESTS": "ON",
-        "BUILD_EXAMPLES": "ON"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
-      }
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 21,
+        "patch": 0
     },
-    {
-      "name": "windows-msvc-base",
-      "hidden": true,
-      "inherits": "windows-base",
-      "generator": "Visual Studio 17 2022",
-      "architecture": {
-        "value": "x64",
-        "strategy": "set"
-      },
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "cl",
-        "CMAKE_CXX_COMPILER": "cl"
-      }
-    },
-    {
-      "name": "windows-debug",
-      "displayName": "Windows Debug",
-      "inherits": "windows-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "windows-release",
-      "displayName": "Windows Release",
-      "inherits": "windows-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
-    },
-    {
-      "name": "windows-msvc-debug",
-      "displayName": "Windows MSVC Debug",
-      "inherits": "windows-msvc-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "windows-msvc-release",
-      "displayName": "Windows MSVC Release",
-      "inherits": "windows-msvc-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
-    },
-    {
-      "name": "linux-base",
-      "hidden": true,
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}",
-      "cacheVariables": {
-        "CMAKE_CXX_STANDARD": "17",
-        "CMAKE_CXX_STANDARD_REQUIRED": "ON",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "BUILD_TESTS": "ON",
-        "BUILD_EXAMPLES": "ON"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "linux-debug",
-      "displayName": "Linux Debug",
-      "inherits": "linux-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_CXX_FLAGS": "-Wall -Wextra -pedantic"
-      }
-    },
-    {
-      "name": "linux-release",
-      "displayName": "Linux Release",
-      "inherits": "linux-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_CXX_FLAGS": "-Wall -Wextra -pedantic -O3"
-      }
-    },
-    {
-      "name": "macos-base",
-      "hidden": true,
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}",
-      "cacheVariables": {
-        "CMAKE_CXX_STANDARD": "17",
-        "CMAKE_CXX_STANDARD_REQUIRED": "ON",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "BUILD_TESTS": "ON",
-        "BUILD_EXAMPLES": "ON"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Darwin"
-      }
-    },
-    {
-      "name": "macos-debug",
-      "displayName": "macOS Debug",
-      "inherits": "macos-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "macos-release",
-      "displayName": "macOS Release",
-      "inherits": "macos-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
-    }
-  ],
-  "buildPresets": [
-    {
-      "name": "windows-debug",
-      "configurePreset": "windows-debug"
-    },
-    {
-      "name": "windows-release",
-      "configurePreset": "windows-release"
-    },
-    {
-      "name": "windows-msvc-debug",
-      "configurePreset": "windows-msvc-debug"
-    },
-    {
-      "name": "windows-msvc-release",
-      "configurePreset": "windows-msvc-release"
-    },
-    {
-      "name": "linux-debug",
-      "configurePreset": "linux-debug"
-    },
-    {
-      "name": "linux-release",
-      "configurePreset": "linux-release"
-    },
-    {
-      "name": "macos-debug",
-      "configurePreset": "macos-debug"
-    },
-    {
-      "name": "macos-release",
-      "configurePreset": "macos-release"
-    }
-  ]
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}"
+        },
+        {
+            "name": "config-dev",
+            "hidden": true,
+            "cacheVariables": {
+                "ND_ARRAY_BUILD_TESTS": "ON",
+                "ND_ARRAY_BUILD_EXAMPLES": "ON",
+                "ND_ARRAY_USE_SYSTEM_INCLUDE": "OFF"
+            }
+        },
+        {
+            "name": "config-release",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "config-debug",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "windows-base",
+            "hidden": true,
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "linux-base",
+            "hidden": true,
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "macos-base",
+            "hidden": true,
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "windows-msvc-base",
+            "hidden": true,
+            "inherits": "windows-base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "cl",
+                "CMAKE_CXX_COMPILER": "cl"
+            }
+        },
+        {
+            "name": "windows-clang-base",
+            "hidden": true,
+            "inherits": "windows-base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang-cl",
+                "CMAKE_CXX_COMPILER": "clang-cl",
+                "CMAKE_MT": "llvm-mt"
+            }
+        },
+        {
+            "name": "linux-clang-base",
+            "hidden": true,
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        },
+        {
+            "name": "linux-gcc-base",
+            "hidden": true,
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        },
+        {
+            "name": "macos-clang-base",
+            "hidden": true,
+            "inherits": "macos-base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        },
+        {
+            "name": "windows-debug",
+            "inherits": [
+                "base",
+                "config-dev",
+                "config-debug",
+                "windows-clang-base"
+            ]
+        },
+        {
+            "name": "windows-release",
+            "inherits": [
+                "base",
+                "config-dev",
+                "config-release",
+                "windows-clang-base"
+            ]
+        },
+        {
+            "name": "windows-msvc-debug",
+            "inherits": [
+                "base",
+                "config-dev",
+                "config-debug",
+                "windows-msvc-base"
+            ]
+        },
+        {
+            "name": "windows-msvc-release",
+            "inherits": [
+                "base",
+                "config-dev",
+                "config-release",
+                "windows-msvc-base"
+            ]
+        },
+        {
+            "name": "linux-debug",
+            "inherits": [
+                "base",
+                "config-dev",
+                "config-debug",
+                "linux-clang-base"
+            ]
+        },
+        {
+            "name": "linux-release",
+            "inherits": [
+                "base",
+                "config-dev",
+                "config-release",
+                "linux-clang-base"
+            ]
+        },
+        {
+            "name": "macos-debug",
+            "inherits": [
+                "base",
+                "config-dev",
+                "config-debug",
+                "macos-clang-base"
+            ]
+        },
+        {
+            "name": "macos-release",
+            "inherits": [
+                "base",
+                "config-dev",
+                "config-release",
+                "macos-clang-base"
+            ]
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "windows-debug",
+            "configurePreset": "windows-debug"
+        },
+        {
+            "name": "windows-release",
+            "configurePreset": "windows-release"
+        },
+        {
+            "name": "windows-msvc-debug",
+            "configurePreset": "windows-msvc-debug"
+        },
+        {
+            "name": "windows-msvc-release",
+            "configurePreset": "windows-msvc-release"
+        },
+        {
+            "name": "linux-debug",
+            "configurePreset": "linux-debug"
+        },
+        {
+            "name": "linux-release",
+            "configurePreset": "linux-release"
+        },
+        {
+            "name": "macos-debug",
+            "configurePreset": "macos-debug"
+        },
+        {
+            "name": "macos-release",
+            "configurePreset": "macos-release"
+        }
+    ]
 }
