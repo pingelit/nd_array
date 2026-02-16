@@ -1,10 +1,46 @@
 [project]
 name = "nd-array-docs"
-version = "0.1.0"
+version = "0.0.1"
 description = "Documentation tooling for nd_array."
 requires-python = ">=3.10"
 dependencies = [
-  "mkdocs>=1.5",
-  "mkdocs-material>=9.5",
-  "mkdoxy>=1.2.8",
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.5",
+    "mkdoxy>=1.2.8",
+    "bump-my-version>=0.15",
 ]
+
+[tool.bumpversion]
+current_version = "0.0.0"
+parse = """(?x)(?P<major>0|[1-9]\\d*)\\.(?P<minor>0|[1-9]\\d*)\\.(?P<patch>0|[1-9]\\d*)"""
+serialize = ["{major}.{minor}.{patch}"]
+search = "{current_version}"
+replace = "{new_version}"
+regex = true
+ignore_missing_version = false
+ignore_missing_files = false
+tag = true
+sign_tags = false
+tag_name = "v{new_version}"
+tag_message = "Bump version: {current_version} → {new_version}"
+allow_dirty = true
+commit = true
+message = "Bump version: {current_version} → {new_version}"
+commit_args = "-i CHANGELOG.md"
+setup_hooks = []
+post_commit_hooks = []
+
+[[tool.bumpversion.files]]
+filename = "CMakeLists.txt"
+search = "VERSION {current_version}"
+replace = "VERSION {new_version}"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = "version = \"{current_version}\""
+replace = "version = \"{new_version}\""
+
+[[tool.bumpversion.files]]
+filename = "CHANGELOG.md"
+search = "Unreleased"
+replace = "Unreleased]\n\n## [{new_version}] - {now:%Y-%m-%d}"
