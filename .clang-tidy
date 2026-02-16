@@ -12,6 +12,10 @@ HeaderFilterRegex: '.*nd_array.*'
 FormatStyle: file
 
 CheckOptions:
+  - key: bugprone-easily-swappable-parameters.MinimumLength
+    value: 3
+  - key: bugprone-easily-swappable-parameters.NamePrefixSuffixSilenceDissimilarityThreshold
+    value: 5
   - key: readability-identifier-naming.NamespaceCase
     value: lower_case
   - key: readability-identifier-naming.ClassCase

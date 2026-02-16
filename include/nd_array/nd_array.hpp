@@ -36,8 +36,8 @@ namespace cppa
 			[[nodiscard]] static constexpr size_type compute( const std::array<size_type, MaxRank>& extents, const std::array<size_type, MaxRank>& strides,
 			                                                  Indices... indices )
 			{
-				size_type idx[]  = { static_cast<size_type>( indices )... };
-				size_type offset = 0;
+				std::array<size_type, sizeof...( indices )> idx = { static_cast<size_type>( indices )... };
+				size_type offset                                = 0;
 				for( size_t i = 0; i < sizeof...( indices ); ++i )
 				{
 					if( idx[i] >= extents[i] )
@@ -282,7 +282,7 @@ namespace cppa
 		{
 			static_assert( sizeof...( indices ) <= MaxRank, "Too many dimensions" );
 
-			size_type temp[] = { static_cast<size_type>( indices )... };
+			std::array<size_type, sizeof...( indices )> temp = { static_cast<size_type>( indices )... };
 			for( size_t i = 0; i < rank_; ++i )
 			{
 				extents_[i] = temp[i];
@@ -324,8 +324,7 @@ namespace cppa
 
 		/// \brief Creates a subspan by restricting a range along one dimension
 		/// \param dim Dimension to restrict (0-based)
-		/// \param start Starting index in that dimension (inclusive)
-		/// \param end Ending index in that dimension (exclusive)
+		/// \param range Pair of {start (inclusive), end (exclusive)} indices for that dimension
 		/// \return New nd_span view of the restricted data
 		/// \throws std::out_of_range if dimension or range is invalid
 		/// \example
@@ -333,8 +332,10 @@ namespace cppa
 		/// nd_span<double> span(data, 5, 10);
 		/// auto sub = span.subspan(0, 1, 4);  // Rows 1-3, all columns
 		/// \endcode
-		[[nodiscard]] nd_span subspan( size_type dim, size_type start, size_type end ) const
+		[[nodiscard]] nd_span subspan( size_type dim, std::pair<size_type, size_type> range ) const
 		{
+			size_type start = range.first;
+			size_type end   = range.second;
 			if( dim >= rank_ )
 			{
 				throw std::out_of_range( "Dimension out of range" );
@@ -413,8 +414,8 @@ namespace cppa
 		template<typename... Indices>
 		[[nodiscard]] nd_span reshape( Indices... new_extents ) const
 		{
-			size_type temp[] = { static_cast<size_type>( new_extents )... };
-			return reshape_impl( temp, sizeof...( new_extents ) );
+			std::array<size_type, sizeof...( new_extents )> temp = { static_cast<size_type>( new_extents )... };
+			return reshape_impl( temp.data( ), sizeof...( new_extents ) );
 		}
 
 		/// \brief Returns a transposed view using an axis permutation
@@ -696,7 +697,7 @@ namespace cppa
 
 			compute_strides( );
 			size_ = compute_size( );
-			data_ = std::make_unique<Ty[]>( size_ );
+			data_ = std::make_unique<Ty[]>( size_ ); // NOLINT(modernize-avoid-c-arrays)
 		}
 
 		/// \brief Constructs an array from a container of dimension sizes
@@ -729,7 +730,7 @@ namespace cppa
 
 			compute_strides( );
 			size_ = compute_size( );
-			data_ = std::make_unique<Ty[]>( size_ );
+			data_ = std::make_unique<Ty[]>( size_ ); // NOLINT(modernize-avoid-c-arrays)
 		}
 
 		/// \brief Constructs an array with variadic dimension sizes
@@ -744,7 +745,7 @@ namespace cppa
 		{
 			static_assert( sizeof...( indices ) <= MaxRank, "Too many dimensions" );
 
-			size_type temp[] = { static_cast<size_type>( indices )... };
+			std::array<size_type, sizeof...( indices )> temp = { static_cast<size_type>( indices )... };
 			for( size_t i = 0; i < rank_; ++i )
 			{
 				extents_[i] = temp[i];
@@ -756,7 +757,7 @@ namespace cppa
 
 			compute_strides( );
 			size_ = compute_size( );
-			data_ = std::make_unique<Ty[]>( size_ );
+			data_ = std::make_unique<Ty[]>( size_ ); // NOLINT(modernize-avoid-c-arrays)
 		}
 
 		/// \brief Copy constructor - performs deep copy of data
@@ -765,7 +766,7 @@ namespace cppa
 		{
 			if( size_ > 0 )
 			{
-				data_ = std::make_unique<Ty[]>( size_ );
+				data_ = std::make_unique<Ty[]>( size_ ); // NOLINT(modernize-avoid-c-arrays)
 				std::copy( other.data_.get( ), other.data_.get( ) + size_, data_.get( ) );
 			}
 		}
@@ -795,7 +796,7 @@ namespace cppa
 				strides_ = other.strides_;
 				if( size_ > 0 )
 				{
-					data_ = std::make_unique<Ty[]>( size_ );
+					data_ = std::make_unique<Ty[]>( size_ ); // NOLINT(modernize-avoid-c-arrays)
 					std::copy( other.data_.get( ), other.data_.get( ) + size_, data_.get( ) );
 				}
 				else
@@ -956,12 +957,13 @@ namespace cppa
 
 		/// \brief Creates a subspan by restricting a range along one dimension (const)
 		/// \param dim Dimension to restrict (0-based)
-		/// \param start Starting index in that dimension (inclusive)
-		/// \param end Ending index in that dimension (exclusive)
+		/// \param range Pair of {start (inclusive), end (exclusive)} indices for that dimension
 		/// \return Non-owning view (nd_span) of the restricted data
 		/// 	hrows std::out_of_range if dimension or range is invalid
-		[[nodiscard]] nd_span<const Ty, MaxRank> subspan( size_type dim, size_type start, size_type end ) const
+		[[nodiscard]] nd_span<const Ty, MaxRank> subspan( size_type dim, std::pair<size_type, size_type> range ) const
 		{
+			size_type start = range.first;
+			size_type end   = range.second;
 			if( dim >= rank_ )
 			{
 				throw std::out_of_range( "Dimension out of range" );
@@ -1088,8 +1090,8 @@ namespace cppa
 		template<typename... Indices>
 		[[nodiscard]] nd_span<Ty, MaxRank> reshape( Indices... new_extents )
 		{
-			size_type temp[] = { static_cast<size_type>( new_extents )... };
-			return reshape_impl( temp, sizeof...( new_extents ) );
+			std::array<size_type, sizeof...( new_extents )> temp = { static_cast<size_type>( new_extents )... };
+			return reshape_impl( temp.data( ), sizeof...( new_extents ) );
 		}
 
 		/// \brief Reshapes the array view with variadic extents (const)
@@ -1099,8 +1101,8 @@ namespace cppa
 		template<typename... Indices>
 		[[nodiscard]] nd_span<const Ty, MaxRank> reshape( Indices... new_extents ) const
 		{
-			size_type temp[] = { static_cast<size_type>( new_extents )... };
-			return reshape_impl( temp, sizeof...( new_extents ) );
+			std::array<size_type, sizeof...( new_extents )> temp = { static_cast<size_type>( new_extents )... };
+			return reshape_impl( temp.data( ), sizeof...( new_extents ) );
 		}
 
 		/// \brief Returns a transposed view using an axis permutation
@@ -1246,7 +1248,8 @@ namespace cppa
 		}
 
 	private:
-		std::unique_ptr<Ty[]> data_;             ///< Owned data storage
+		/// \brief Internal owned data storage
+		std::unique_ptr<Ty[]> data_;             // NOLINT(modernize-avoid-c-arrays)
 		std::array<size_type, MaxRank> extents_; ///< Size of each dimension
 		std::array<size_type, MaxRank> strides_; ///< Stride for each dimension
 		size_type size_;                         ///< Total number of elements
@@ -1277,7 +1280,7 @@ namespace cppa
 			result.size_ = detail::compute_size<MaxRank>( result.extents_, result.rank_ );
 			if( result.size_ > 0 )
 			{
-				result.data_     = std::make_unique<Ty[]>( result.size_ );
+				result.data_     = std::make_unique<Ty[]>( result.size_ ); // NOLINT(modernize-avoid-c-arrays)
 				size_type offset = 0;
 				for( const auto& value: span )
 				{

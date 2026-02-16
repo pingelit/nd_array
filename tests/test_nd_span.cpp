@@ -162,7 +162,7 @@ TEST_CASE( "nd_span - Subspan", "[nd_span][subspan]" )
 		}
 
 		nd_span<int> span( data.data( ), 4, 5 );
-		auto sub = span.subspan( 0, 1, 3 ); // rows 1-2
+		auto sub = span.subspan( 0, { 1, 3 } ); // rows 1-2
 
 		REQUIRE( sub.rank( ) == 2 );
 		REQUIRE( sub.extent( 0 ) == 2 );
@@ -180,7 +180,7 @@ TEST_CASE( "nd_span - Subspan", "[nd_span][subspan]" )
 		}
 
 		nd_span<int> span( data.data( ), 3, 5 );
-		auto sub = span.subspan( 1, 1, 4 ); // cols 1-3
+		auto sub = span.subspan( 1, { 1, 4 } ); // cols 1-3
 
 		REQUIRE( sub.rank( ) == 2 );
 		REQUIRE( sub.extent( 0 ) == 3 );
@@ -194,7 +194,7 @@ TEST_CASE( "nd_span - Subspan", "[nd_span][subspan]" )
 		std::array<int, 12> data = { };
 		nd_span<int> span( data.data( ), 3, 4 );
 
-		auto sub    = span.subspan( 0, 1, 2 );
+		auto sub    = span.subspan( 0, { 1, 2 } );
 		sub( 0, 0 ) = 99;
 
 		REQUIRE( data[4] == 99 ); // row 1, col 0
@@ -204,9 +204,9 @@ TEST_CASE( "nd_span - Subspan", "[nd_span][subspan]" )
 	{
 		std::array<int, 12> data = { };
 		nd_span<int> span( data.data( ), 3, 4 );
-		REQUIRE_THROWS_AS( span.subspan( 0, 2, 1 ), std::out_of_range ); // start >= end
-		REQUIRE_THROWS_AS( span.subspan( 0, 0, 5 ), std::out_of_range ); // end > extent
-		REQUIRE_THROWS_AS( span.subspan( 2, 0, 1 ), std::out_of_range ); // dim >= rank
+		REQUIRE_THROWS_AS( span.subspan( 0, { 2, 1 } ), std::out_of_range ); // start >= end
+		REQUIRE_THROWS_AS( span.subspan( 0, { 0, 5 } ), std::out_of_range ); // end > extent
+		REQUIRE_THROWS_AS( span.subspan( 2, { 0, 1 } ), std::out_of_range ); // dim >= rank
 	}
 }
 
@@ -325,7 +325,7 @@ TEST_CASE( "nd_span - Shape transforms", "[nd_span][reshape][transpose][flatten]
 	{
 		std::array<int, 16> data = { };
 		nd_span<int> span( data.data( ), 4, 4 );
-		auto cols = span.subspan( 1, 1, 3 );
+		auto cols = span.subspan( 1, { 1, 3 } );
 		REQUIRE_THROWS_AS( cols.reshape( 2, 4 ), std::runtime_error );
 	}
 
