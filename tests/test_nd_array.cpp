@@ -247,7 +247,7 @@ TEST_CASE( "nd_array - Subspan", "[nd_array][subspan]" )
 			}
 		}
 
-		auto sub = arr.subspan( 0, 1, 3 ); // rows 1-2
+		auto sub = arr.subspan( 0, { 1, 3 } ); // rows 1-2
 		REQUIRE( sub.rank( ) == 2 );
 		REQUIRE( sub.extent( 0 ) == 2 );
 		REQUIRE( sub.extent( 1 ) == 5 );
@@ -266,7 +266,7 @@ TEST_CASE( "nd_array - Subspan", "[nd_array][subspan]" )
 			}
 		}
 
-		auto sub = arr.subspan( 1, 1, 4 ); // cols 1-3
+		auto sub = arr.subspan( 1, { 1, 4 } ); // cols 1-3
 		REQUIRE( sub.rank( ) == 2 );
 		REQUIRE( sub.extent( 0 ) == 3 );
 		REQUIRE( sub.extent( 1 ) == 3 );
@@ -279,7 +279,7 @@ TEST_CASE( "nd_array - Subspan", "[nd_array][subspan]" )
 		nd_array<int> arr( 3, 4 );
 		arr.fill( 0 );
 
-		auto sub    = arr.subspan( 0, 1, 2 );
+		auto sub    = arr.subspan( 0, { 1, 2 } );
 		sub( 0, 0 ) = 99;
 
 		REQUIRE( arr( 1, 0 ) == 99 );
@@ -288,9 +288,9 @@ TEST_CASE( "nd_array - Subspan", "[nd_array][subspan]" )
 	SECTION( "Invalid subspan throws" )
 	{
 		nd_array<int> arr( 3, 4 );
-		REQUIRE_THROWS_AS( arr.subspan( 0, 2, 1 ), std::out_of_range ); // start >= end
-		REQUIRE_THROWS_AS( arr.subspan( 0, 0, 5 ), std::out_of_range ); // end > extent
-		REQUIRE_THROWS_AS( arr.subspan( 2, 0, 1 ), std::out_of_range ); // dim >= rank
+		REQUIRE_THROWS_AS( arr.subspan( 0, { 2, 1 } ), std::out_of_range ); // start >= end
+		REQUIRE_THROWS_AS( arr.subspan( 0, { 0, 5 } ), std::out_of_range ); // end > extent
+		REQUIRE_THROWS_AS( arr.subspan( 2, { 0, 1 } ), std::out_of_range ); // dim >= rank
 	}
 }
 

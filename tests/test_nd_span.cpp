@@ -447,7 +447,7 @@ TEST_CASE( "nd_span - Integration with nd_array", "[nd_span][integration]" )
 		nd_array<int> arr( 3, 4 );
 		arr.fill( 42 );
 
-		auto span = arr.subspan( 0, 1, 3 );
+		auto span = arr.subspan( 0, { 1, 3 } );
 		REQUIRE( span.rank( ) == 2 );
 		REQUIRE( span( 0, 0 ) == 42 );
 	}
@@ -457,7 +457,7 @@ TEST_CASE( "nd_span - Integration with nd_array", "[nd_span][integration]" )
 		nd_array<int> arr( 3, 4 );
 		arr.fill( 0 );
 
-		auto span    = arr.subspan( 0, 1, 2 );
+		auto span    = arr.subspan( 0, { 1, 2 } );
 		span( 0, 0 ) = 99;
 
 		REQUIRE( arr( 1, 0 ) == 99 );

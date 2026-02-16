@@ -27,9 +27,9 @@ namespace cppa
 
 			/// \brief Computes the linear offset from multi-dimensional indices
 			/// \tparam Indices Variadic index types (typically size_t)
-			/// \param extents Array of dimension sizes
-			/// \param strides Array of stride values for each dimension
-			/// \param indices Variable number of indices, one per dimension
+			/// \param t_extents Array of dimension sizes
+			/// \param t_strides Array of stride values for each dimension
+			/// \param t_indices Variable number of indices, one per dimension
 			/// \return Linear offset into contiguous memory
 			/// \throws std::out_of_range if any index is out of bounds
 			template<typename... Indices>
@@ -58,9 +58,9 @@ namespace cppa
 			using size_type = size_t;
 
 			/// \brief Computes row-major strides from dimension extents
-			/// \param strides Output array to store computed strides
-			/// \param extents Array of dimension sizes
-			/// \param rank Actual number of dimensions in use
+			/// \param t_strides Output array to store computed strides
+			/// \param t_extents Array of dimension sizes
+			/// \param t_rank Actual number of dimensions in use
 			/// \note Uses row-major (C-style) ordering where last dimension varies fastest
 			static constexpr void compute( std::array<size_type, MaxRank>& t_strides, const std::array<size_type, MaxRank>& t_extents, size_type t_rank ) noexcept
 			{
@@ -92,8 +92,8 @@ namespace cppa
 
 		/// \brief Computes total number of elements from extents
 		/// \tparam MaxRank Maximum number of dimensions supported
-		/// \param extents Extents array
-		/// \param rank Number of active dimensions
+		/// \param t_extents Extents array
+		/// \param t_rank Number of active dimensions
 		/// \return Product of active extents (0 when rank is 0)
 		template<size_t MaxRank>
 		[[nodiscard]] constexpr size_t compute_size( const std::array<size_t, MaxRank>& t_extents, size_t t_rank ) noexcept
@@ -110,9 +110,9 @@ namespace cppa
 
 		/// \brief Checks if a span is contiguous in row-major order
 		/// \tparam MaxRank Maximum number of dimensions supported
-		/// \param extents Extents array
-		/// \param strides Strides array
-		/// \param rank Number of active dimensions
+		/// \param t_extents Extents array
+		/// \param t_strides Strides array
+		/// \param t_rank Number of active dimensions
 		/// \return True if the view is contiguous
 		template<size_t MaxRank>
 		[[nodiscard]] constexpr bool is_contiguous( const std::array<size_t, MaxRank>& t_extents, const std::array<size_t, MaxRank>& t_strides, size_t t_rank ) noexcept
@@ -135,8 +135,8 @@ namespace cppa
 
 		/// \brief Validates a permutation for transpose
 		/// 	param MaxRank Maximum number of dimensions supported
-		/// \param axes Permutation array
-		/// \param rank Number of active dimensions
+		/// \param t_axes Permutation array
+		/// \param t_rank Number of active dimensions
 		/// 	hrows std::invalid_argument if the permutation is invalid
 		template<size_t MaxRank>
 		inline void validate_permutation( const size_t* t_axes, size_t t_rank )
@@ -191,10 +191,10 @@ namespace cppa
 		using const_pointer   = const Ty*; ///< Const pointer to element
 
 		/// \brief Constructs a span from raw data with explicit extents and strides
-		/// \param data Pointer to the first element
-		/// \param extents Sizes of each dimension
-		/// \param strides Stride values for each dimension
-		/// \param rank Number of dimensions (must be <= MaxRank)
+		/// \param t_data Pointer to the first element
+		/// \param t_extents Sizes of each dimension
+		/// \param t_strides Stride values for each dimension
+		/// \param t_rank Number of dimensions (must be <= MaxRank)
 		/// \note This is the primary constructor used by subspan/slice operations
 		constexpr nd_span( pointer t_data, const std::array<size_type, MaxRank>& t_extents, const std::array<size_type, MaxRank>& t_strides, size_type t_rank ) noexcept
 		    : m_data( t_data )
@@ -205,8 +205,8 @@ namespace cppa
 		}
 
 		/// \brief Constructs a span from raw data with dimension sizes
-		/// \param data Pointer to the first element
-		/// \param extents Initializer list of dimension sizes {dim0, dim1, ...}
+		/// \param t_data Pointer to the first element
+		/// \param t_extents Initializer list of dimension sizes {dim0, dim1, ...}
 		/// \throws std::invalid_argument if number of dimensions exceeds MaxRank
 		/// \example
 		/// \code
@@ -235,8 +235,8 @@ namespace cppa
 
 		/// \brief Constructs a span from raw data with a container of dimension sizes
 		/// \tparam Container Type of container holding extents (e.g., std::vector<size_t>)
-		/// \param data Pointer to the first element
-		/// \param extents Container with dimension sizes
+		/// \param t_data Pointer to the first element
+		/// \param t_extents Container with dimension sizes
 		/// \throws std::invalid_argument if number of dimensions exceeds MaxRank
 		/// \example
 		/// \code
@@ -269,8 +269,8 @@ namespace cppa
 
 		/// \brief Constructs a span from raw data with variadic dimension sizes
 		/// \tparam Indices Variadic index types (typically size_t or convertible to size_t)
-		/// \param data Pointer to the first element
-		/// \param indices Dimension sizes as separate arguments
+		/// \param t_data Pointer to the first element
+		/// \param t_indices Dimension sizes as separate arguments
 		/// \example
 		/// \code
 		/// double data[24];
@@ -297,7 +297,7 @@ namespace cppa
 
 		/// \brief Accesses an element with multi-dimensional indexing (non-const)
 		/// \tparam Indices Variadic index types (typically size_t)
-		/// \param indices Multi-dimensional indices (i, j, k, ...)
+		/// \param t_indices Multi-dimensional indices (i, j, k, ...)
 		/// \return Reference to the element at the specified location
 		/// \throws std::out_of_range if any index is out of bounds
 		/// \example
@@ -313,7 +313,7 @@ namespace cppa
 
 		/// \brief Accesses an element with multi-dimensional indexing (const)
 		/// \tparam Indices Variadic index types (typically size_t)
-		/// \param indices Multi-dimensional indices (i, j, k, ...)
+		/// \param t_indices Multi-dimensional indices (i, j, k, ...)
 		/// \return Const reference to the element at the specified location
 		/// \throws std::out_of_range if any index is out of bounds
 		template<typename... Indices>
@@ -323,8 +323,8 @@ namespace cppa
 		}
 
 		/// \brief Creates a subspan by restricting a range along one dimension
-		/// \param dim Dimension to restrict (0-based)
-		/// \param range Pair of {start (inclusive), end (exclusive)} indices for that dimension
+		/// \param t_dim Dimension to restrict (0-based)
+		/// \param t_range Pair of {start (inclusive), end (exclusive)} indices for that dimension
 		/// \return New nd_span view of the restricted data
 		/// \throws std::out_of_range if dimension or range is invalid
 		/// \example
@@ -354,8 +354,8 @@ namespace cppa
 		}
 
 		/// \brief Creates a lower-dimensional view by fixing one dimension's index
-		/// \param dim Dimension to slice (0-based)
-		/// \param index Index value to fix for that dimension
+		/// \param t_dim Dimension to slice (0-based)
+		/// \param t_index Index value to fix for that dimension
 		/// \return New nd_span with rank reduced by 1
 		/// \throws std::out_of_range if dimension or index is invalid
 		/// \example
@@ -401,7 +401,7 @@ namespace cppa
 		}
 
 		/// \brief Reshapes the span (view-only, row-major contiguous required)
-		/// \param new_extents New shape extents
+		/// \param t_new_extents New shape extents
 		/// \return Reshaped view
 		/// \throws std::invalid_argument if rank exceeds MaxRank or size mismatch
 		/// \throws std::runtime_error if the view is not contiguous
@@ -409,7 +409,7 @@ namespace cppa
 
 		/// \brief Reshapes the span with variadic extents (view-only, row-major contiguous required)
 		/// \tparam Indices Variadic extent types
-		/// \param new_extents New shape extents
+		/// \param t_new_extents New shape extents
 		/// \return Reshaped view
 		template<typename... Indices>
 		[[nodiscard]] nd_span reshape( Indices... t_new_extents ) const
@@ -419,7 +419,7 @@ namespace cppa
 		}
 
 		/// \brief Returns a transposed view using an axis permutation
-		/// \param axes Permutation of axes
+		/// \param t_axes Permutation of axes
 		/// \return Transposed view
 		/// 	hrows std::invalid_argument if permutation is invalid
 		[[nodiscard]] nd_span transpose( std::initializer_list<size_type> t_axes ) const { return transpose_impl( t_axes.begin( ), t_axes.size( ) ); }
@@ -465,7 +465,7 @@ namespace cppa
 		}
 
 		/// \brief Gets the size of a specific dimension
-		/// \param dim Dimension index (0-based)
+		/// \param t_dim Dimension index (0-based)
 		/// \return Size of the specified dimension
 		/// \throws std::out_of_range if dimension is >= rank
 		[[nodiscard]] size_type extent( size_type t_dim ) const
@@ -478,7 +478,7 @@ namespace cppa
 		}
 
 		/// \brief Gets the stride of a specific dimension
-		/// \param dim Dimension index (0-based)
+		/// \param t_dim Dimension index (0-based)
 		/// \return Stride of the specified dimension
 		/// \throws std::out_of_range if dimension is >= rank
 		[[nodiscard]] size_type stride( size_type t_dim ) const
@@ -670,7 +670,7 @@ namespace cppa
 		}
 
 		/// \brief Constructs an array with specified dimension sizes
-		/// \param extents Initializer list of dimension sizes {dim0, dim1, ...}
+		/// \param t_extents Initializer list of dimension sizes {dim0, dim1, ...}
 		/// \throws std::invalid_argument if number of dimensions exceeds MaxRank
 		///
 		/// <b>Example</b>
@@ -702,7 +702,7 @@ namespace cppa
 
 		/// \brief Constructs an array from a container of dimension sizes
 		/// \tparam Container Type of container holding extents (e.g., std::vector<size_t>)
-		/// \param extents Container with dimension sizes
+		/// \param t_extents Container with dimension sizes
 		/// \throws std::invalid_argument if number of dimensions exceeds MaxRank
 		/// \example
 		/// \code
@@ -735,7 +735,7 @@ namespace cppa
 
 		/// \brief Constructs an array with variadic dimension sizes
 		/// \tparam Indices Variadic index types (typically size_t or convertible to size_t)
-		/// \param indices Dimension sizes as separate arguments
+		/// \param t_indices Dimension sizes as separate arguments
 		/// \example
 		/// \code
 		/// nd_array<double> arr(2, 3, 4);  // 2x3x4 array
@@ -761,7 +761,7 @@ namespace cppa
 		}
 
 		/// \brief Copy constructor - performs deep copy of data
-		/// \param other Array to copy from
+		/// \param t_other Array to copy from
 		nd_array( const nd_array& t_other ) : m_extents( t_other.m_extents ), m_strides( t_other.m_strides ), m_size( t_other.m_size ), m_rank( t_other.m_rank )
 		{
 			if( m_size > 0 )
@@ -775,16 +775,16 @@ namespace cppa
 		nd_array( nd_array&& t_other ) noexcept = default;
 
 		/// \brief Constructs an owning array by deep-copying an nd_span
-		/// \param span Source span to copy
+		/// \param t_span Source span to copy
 		/// 	hrows std::invalid_argument if span rank exceeds MaxRank
 		explicit nd_array( const nd_span<const Ty, MaxRank>& t_span ) : nd_array( from_span( span ) ) {}
 
 		/// \brief Constructs an owning array by deep-copying an nd_span
-		/// \param span Source span to copy
+		/// \param t_span Source span to copy
 		explicit nd_array( const nd_span<Ty, MaxRank>& t_span ) : nd_array( from_span( t_span ) ) {}
 
 		/// \brief Copy assignment operator - performs deep copy of data
-		/// \param other Array to copy from
+		/// \param t_other Array to copy from
 		/// \return Reference to this array
 		nd_array& operator=( const nd_array& t_other )
 		{
@@ -808,34 +808,34 @@ namespace cppa
 		}
 
 		/// \brief Move assignment operator - transfers ownership of data
-		/// \param other Array to move from
+		/// \param t_other Array to move from
 		/// \return Reference to this array
 		nd_array& operator=( nd_array&& t_other ) noexcept = default;
 
 		/// \brief Assigns from an nd_span by deep-copying its contents
-		/// \param span Source span to copy
+		/// \param t_span Source span to copy
 		/// \return Reference to this array
 		nd_array& operator=( const nd_span<const Ty, MaxRank>& t_span ) { return *this = from_span( span ); }
 
 		/// \brief Assigns from an nd_span by deep-copying its contents
-		/// \param span Source span to copy
+		/// \param t_span Source span to copy
 		/// \return Reference to this array
 		nd_array& operator=( const nd_span<Ty, MaxRank>& t_span ) { return *this = from_span( t_span ); }
 
 		/// \brief Creates an owning array by deep-copying an nd_span
-		/// \param span Source span to copy
+		/// \param t_span Source span to copy
 		/// \return Newly allocated array with the same contents
 		/// 	hrows std::invalid_argument if span rank exceeds MaxRank
 		static nd_array from_span( const nd_span<const Ty, MaxRank>& t_span ) { return from_span_impl( span ); }
 
 		/// \brief Creates an owning array by deep-copying an nd_span
-		/// \param span Source span to copy
+		/// \param t_span Source span to copy
 		/// \return Newly allocated array with the same contents
 		static nd_array from_span( const nd_span<Ty, MaxRank>& t_span ) { return from_span_impl( t_span ); }
 
 		/// \brief Accesses an element with multi-dimensional indexing (non-const)
 		/// \tparam Indices Variadic index types (typically size_t)
-		/// \param indices Multi-dimensional indices (i, j, k, ...)
+		/// \param t_indices Multi-dimensional indices (i, j, k, ...)
 		/// \return Reference to the element at the specified location
 		/// \throws std::out_of_range if any index is out of bounds
 		/// \example
@@ -852,7 +852,7 @@ namespace cppa
 
 		/// \brief Accesses an element with multi-dimensional indexing (const)
 		/// \tparam Indices Variadic index types (typically size_t)
-		/// \param indices Multi-dimensional indices (i, j, k, ...)
+		/// \param t_indices Multi-dimensional indices (i, j, k, ...)
 		/// \return Const reference to the element at the specified location
 		/// \throws std::out_of_range if any index is out of bounds
 		template<typename... Indices>
@@ -863,7 +863,7 @@ namespace cppa
 		}
 
 		/// \brief Creates a subspan with multiple dimension ranges
-		/// \param ranges Initializer list of {start, end} pairs for each dimension
+		/// \param t_ranges Initializer list of {start, end} pairs for each dimension
 		/// \return Non-owning view (nd_span) of the restricted data
 		/// \throws std::out_of_range if too many dimensions or invalid ranges
 		/// \example
@@ -897,7 +897,7 @@ namespace cppa
 		}
 
 		/// \brief Creates a subspan with multiple dimension ranges (const)
-		/// \param ranges Initializer list of {start, end} pairs for each dimension
+		/// \param t_ranges Initializer list of {start, end} pairs for each dimension
 		/// \return Non-owning view (nd_span) of the restricted data
 		/// 	hrows std::out_of_range if too many dimensions or invalid ranges
 		[[nodiscard]] nd_span<const Ty, MaxRank> subspan( std::initializer_list<std::pair<size_type, size_type>> t_ranges ) const
@@ -926,9 +926,8 @@ namespace cppa
 		}
 
 		/// \brief Creates a subspan by restricting a range along one dimension
-		/// \param dim Dimension to restrict (0-based)
-		/// \param start Starting index in that dimension (inclusive)
-		/// \param end Ending index in that dimension (exclusive)
+		/// \param t_dim Dimension to restrict (0-based)
+		/// \param t_range Pair of {start (inclusive), end (exclusive)} indices for that dimension
 		/// \return Non-owning view (nd_span) of the restricted data
 		/// \throws std::out_of_range if dimension or range is invalid
 		/// \example
@@ -936,8 +935,10 @@ namespace cppa
 		/// nd_array<double> arr(5, 10);
 		/// auto sub = arr.subspan(0, 1, 4);  // Rows 1-3, all columns
 		/// \endcode
-		[[nodiscard]] nd_span<Ty, MaxRank> subspan( size_type t_dim, size_type t_start, size_type t_end )
+		[[nodiscard]] nd_span<Ty, MaxRank> subspan( size_type t_dim, std::pair<size_type, size_type> t_range )
 		{
+			size_type t_start = t_range.first;
+			size_type t_end   = t_range.second;
 			if( t_dim >= m_rank )
 			{
 				throw std::out_of_range( "Dimension out of range" );
@@ -956,8 +957,8 @@ namespace cppa
 		}
 
 		/// \brief Creates a subspan by restricting a range along one dimension (const)
-		/// \param dim Dimension to restrict (0-based)
-		/// \param range Pair of {start (inclusive), end (exclusive)} indices for that dimension
+		/// \param t_dim Dimension to restrict (0-based)
+		/// \param t_range Pair of {start (inclusive), end (exclusive)} indices for that dimension
 		/// \return Non-owning view (nd_span) of the restricted data
 		/// 	hrows std::out_of_range if dimension or range is invalid
 		[[nodiscard]] nd_span<const Ty, MaxRank> subspan( size_type t_dim, std::pair<size_type, size_type> t_range ) const
@@ -982,8 +983,8 @@ namespace cppa
 		}
 
 		/// \brief Creates a lower-dimensional view by fixing one dimension's index
-		/// \param dim Dimension to slice (0-based)
-		/// \param index Index value to fix for that dimension
+		/// \param t_dim Dimension to slice (0-based)
+		/// \param t_index Index value to fix for that dimension
 		/// \return Non-owning view (nd_span) with rank reduced by 1
 		/// \throws std::out_of_range if dimension or index is invalid
 		/// \example
@@ -1029,8 +1030,8 @@ namespace cppa
 		}
 
 		/// \brief Creates a lower-dimensional view by fixing one dimension's index (const)
-		/// \param dim Dimension to slice (0-based)
-		/// \param index Index value to fix for that dimension
+		/// \param t_dim Dimension to slice (0-based)
+		/// \param t_index Index value to fix for that dimension
 		/// \return Non-owning view (nd_span) with rank reduced by 1
 		/// 	hrows std::out_of_range if dimension or index is invalid
 		[[nodiscard]] nd_span<const Ty, MaxRank> slice( size_type t_dim, size_type t_index ) const
@@ -1071,12 +1072,12 @@ namespace cppa
 		}
 
 		/// \brief Reshapes the array view (row-major contiguous)
-		/// \param new_extents New shape extents
+		/// \param t_new_extents New shape extents
 		/// \return Reshaped view
 		[[nodiscard]] nd_span<Ty, MaxRank> reshape( std::initializer_list<size_type> t_new_extents ) { return reshape_impl( new_extents.begin( ), new_extents.size( ) ); }
 
 		/// \brief Reshapes the array view (row-major contiguous)
-		/// \param new_extents New shape extents
+		/// \param t_new_extents New shape extents
 		/// \return Reshaped const view
 		[[nodiscard]] nd_span<const Ty, MaxRank> reshape( std::initializer_list<size_type> t_new_extents ) const
 		{
@@ -1085,7 +1086,7 @@ namespace cppa
 
 		/// \brief Reshapes the array view with variadic extents
 		/// \tparam Indices Variadic extent types
-		/// \param new_extents New shape extents
+		/// \param t_new_extents New shape extents
 		/// \return Reshaped view
 		template<typename... Indices>
 		[[nodiscard]] nd_span<Ty, MaxRank> reshape( Indices... t_new_extents )
@@ -1096,7 +1097,7 @@ namespace cppa
 
 		/// \brief Reshapes the array view with variadic extents (const)
 		/// \tparam Indices Variadic extent types
-		/// \param new_extents New shape extents
+		/// \param t_new_extents New shape extents
 		/// \return Reshaped const view
 		template<typename... Indices>
 		[[nodiscard]] nd_span<const Ty, MaxRank> reshape( Indices... t_new_extents ) const
@@ -1106,7 +1107,7 @@ namespace cppa
 		}
 
 		/// \brief Returns a transposed view using an axis permutation
-		/// \param axes Permutation of axes
+		/// \param t_axes Permutation of axes
 		/// \return Transposed view
 		[[nodiscard]] nd_span<Ty, MaxRank> transpose( std::initializer_list<size_type> t_axes )
 		{
@@ -1114,7 +1115,7 @@ namespace cppa
 		}
 
 		/// \brief Returns a transposed view using an axis permutation (const)
-		/// \param axes Permutation of axes
+		/// \param t_axes Permutation of axes
 		/// \return Transposed const view
 		[[nodiscard]] nd_span<const Ty, MaxRank> transpose( std::initializer_list<size_type> t_axes ) const
 		{
@@ -1156,7 +1157,7 @@ namespace cppa
 		[[nodiscard]] nd_span<const Ty, MaxRank> squeeze( ) const { return squeeze_impl( data_.get( ) ); }
 
 		/// \brief Gets the size of a specific dimension
-		/// \param dim Dimension index (0-based)
+		/// \param t_dim Dimension index (0-based)
 		/// \return Size of the specified dimension
 		/// \throws std::out_of_range if dimension is >= rank
 		[[nodiscard]] size_type extent( size_type t_dim ) const
@@ -1169,7 +1170,7 @@ namespace cppa
 		}
 
 		/// \brief Gets the stride of a specific dimension
-		/// \param dim Dimension index (0-based)
+		/// \param t_dim Dimension index (0-based)
 		/// \return Stride of the specified dimension
 		/// \throws std::out_of_range if dimension is >= rank
 		[[nodiscard]] size_type stride( size_type t_dim ) const
@@ -1224,7 +1225,7 @@ namespace cppa
 		[[nodiscard]] const_pointer cend( ) const noexcept { return data_.get( ) + size_; }
 
 		/// \brief Fills all elements with a specified value
-		/// \param value Value to fill the array with
+		/// \param t_value Value to fill the array with
 		/// \example
 		/// \code
 		/// nd_array<double> arr(3, 4);
@@ -1234,7 +1235,7 @@ namespace cppa
 
 		/// \brief Applies a function to each element
 		/// \tparam Func Function type (typically a lambda or function object)
-		/// \param func Function that takes a Ty and returns a Ty
+		/// \param t_func Function that takes a Ty and returns a Ty
 		/// \example
 		/// \code
 		/// nd_array<double> arr(3, 4);
