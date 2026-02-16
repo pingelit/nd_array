@@ -9,16 +9,16 @@ TEST_CASE("nd_span - Construction", "[nd_span][construction]")
 {
 	SECTION("Variadic constructor - 1D")
 	{
-		int data[10] = {};
-		nd_span<int> span(data, 10);
+		std::array<int, 10> data = {};
+		nd_span<int> span(data.data(), 10);
 		REQUIRE(span.rank() == 1);
 		REQUIRE(span.extent(0) == 10);
 	}
 
 	SECTION("Variadic constructor - 2D")
 	{
-		double data[12] = {};
-		nd_span<double> span(data, 3, 4);
+		std::array<double, 12> data = {};
+		nd_span<double> span(data.data(), 3, 4);
 		REQUIRE(span.rank() == 2);
 		REQUIRE(span.extent(0) == 3);
 		REQUIRE(span.extent(1) == 4);
@@ -26,8 +26,8 @@ TEST_CASE("nd_span - Construction", "[nd_span][construction]")
 
 	SECTION("Variadic constructor - 3D")
 	{
-		float data[24] = {};
-		nd_span<float> span(data, 2, 3, 4);
+		std::array<float, 24> data = {};
+		nd_span<float> span(data.data(), 2, 3, 4);
 		REQUIRE(span.rank() == 3);
 		REQUIRE(span.extent(0) == 2);
 		REQUIRE(span.extent(1) == 3);
@@ -36,8 +36,8 @@ TEST_CASE("nd_span - Construction", "[nd_span][construction]")
 
 	SECTION("Initializer list constructor")
 	{
-		int data[24] = {};
-		nd_span<int> span(data, {2, 3, 4});
+		std::array<int, 24> data = {};
+		nd_span<int> span(data.data(), {2, 3, 4});
 		REQUIRE(span.rank() == 3);
 		REQUIRE(span.extent(0) == 2);
 		REQUIRE(span.extent(1) == 3);
@@ -69,8 +69,8 @@ TEST_CASE("nd_span - Element access", "[nd_span][access]")
 {
 	SECTION("1D span access")
 	{
-		int data[5] = {10, 20, 30, 40, 50};
-		nd_span<int> span(data, 5);
+		std::array<int, 5> data = {10, 20, 30, 40, 50};
+		nd_span<int> span(data.data(), 5);
 
 		for(size_t i = 0; i < 5; ++i)
 		{
@@ -80,13 +80,14 @@ TEST_CASE("nd_span - Element access", "[nd_span][access]")
 
 	SECTION("2D span access")
 	{
-		int data[12];
+		std::array<int, 12> data = {};
+
 		for(size_t i = 0; i < 12; ++i)
 		{
 			data[i] = static_cast<int>(i);
 		}
 
-		nd_span<int> span(data, 3, 4);
+		nd_span<int> span(data.data(), 3, 4);
 		for(size_t i = 0; i < 3; ++i)
 		{
 			for(size_t j = 0; j < 4; ++j)
@@ -98,13 +99,13 @@ TEST_CASE("nd_span - Element access", "[nd_span][access]")
 
 	SECTION("3D span access")
 	{
-		int data[24];
+		std::array<int, 24> data = {};
 		for(size_t i = 0; i < 24; ++i)
 		{
 			data[i] = static_cast<int>(i);
 		}
 
-		nd_span<int> span(data, 2, 3, 4);
+		nd_span<int> span(data.data(), 2, 3, 4);
 		int counter = 0;
 		for(size_t i = 0; i < 2; ++i)
 		{
@@ -120,8 +121,8 @@ TEST_CASE("nd_span - Element access", "[nd_span][access]")
 
 	SECTION("Modifications through span affect underlying data")
 	{
-		int data[6] = {0, 0, 0, 0, 0, 0};
-		nd_span<int> span(data, 2, 3);
+		std::array<int, 6> data = {0, 0, 0, 0, 0, 0};
+		nd_span<int> span(data.data(), 2, 3);
 		span(1, 2) = 99;
 
 		REQUIRE(data[5] == 99); // Last element
@@ -129,8 +130,8 @@ TEST_CASE("nd_span - Element access", "[nd_span][access]")
 
 	SECTION("Out of bounds access throws")
 	{
-		int data[12] = {};
-		nd_span<int> span(data, 3, 4);
+		std::array<int, 12> data = {};
+		nd_span<int> span(data.data(), 3, 4);
 		REQUIRE_THROWS_AS(span(3, 0), std::out_of_range);
 		REQUIRE_THROWS_AS(span(0, 4), std::out_of_range);
 	}
@@ -140,8 +141,8 @@ TEST_CASE("nd_span - Const access", "[nd_span][const]")
 {
 	SECTION("Const span access")
 	{
-		const int data[6] = {1, 2, 3, 4, 5, 6};
-		nd_span<const int> span(data, 2, 3);
+		const std::array<int, 6> data = {1, 2, 3, 4, 5, 6};
+		nd_span<const int> span(data.data(), 2, 3);
 
 		REQUIRE(span(0, 0) == 1);
 		REQUIRE(span(1, 2) == 6);
@@ -152,13 +153,13 @@ TEST_CASE("nd_span - Subspan", "[nd_span][subspan]")
 {
 	SECTION("Subspan along dimension 0")
 	{
-		int data[20];
+		std::array<int, 20> data = {};
 		for(size_t i = 0; i < 20; ++i)
 		{
 			data[i] = static_cast<int>(i);
 		}
 
-		nd_span<int> span(data, 4, 5);
+		nd_span<int> span(data.data(), 4, 5);
 		auto sub = span.subspan(0, 1, 3); // rows 1-2
 
 		REQUIRE(sub.rank() == 2);
@@ -170,13 +171,13 @@ TEST_CASE("nd_span - Subspan", "[nd_span][subspan]")
 
 	SECTION("Subspan along dimension 1")
 	{
-		int data[15];
+		std::array<int, 15> data = {};
 		for(size_t i = 0; i < 15; ++i)
 		{
 			data[i] = static_cast<int>(i);
 		}
 
-		nd_span<int> span(data, 3, 5);
+		nd_span<int> span(data.data(), 3, 5);
 		auto sub = span.subspan(1, 1, 4); // cols 1-3
 
 		REQUIRE(sub.rank() == 2);
@@ -188,8 +189,8 @@ TEST_CASE("nd_span - Subspan", "[nd_span][subspan]")
 
 	SECTION("Subspan modifications affect original")
 	{
-		int data[12] = {};
-		nd_span<int> span(data, 3, 4);
+		std::array<int, 12> data = {};
+		nd_span<int> span(data.data(), 3, 4);
 
 		auto sub = span.subspan(0, 1, 2);
 		sub(0, 0) = 99;
@@ -199,8 +200,8 @@ TEST_CASE("nd_span - Subspan", "[nd_span][subspan]")
 
 	SECTION("Invalid subspan throws")
 	{
-		int data[12] = {};
-		nd_span<int> span(data, 3, 4);
+		std::array<int, 12> data = {};
+		nd_span<int> span(data.data(), 3, 4);
 		REQUIRE_THROWS_AS(span.subspan(0, 2, 1), std::out_of_range); // start >= end
 		REQUIRE_THROWS_AS(span.subspan(0, 0, 5), std::out_of_range); // end > extent
 		REQUIRE_THROWS_AS(span.subspan(2, 0, 1), std::out_of_range); // dim >= rank
@@ -211,13 +212,13 @@ TEST_CASE("nd_span - Slice", "[nd_span][slice]")
 {
 	SECTION("Slice 3D to 2D")
 	{
-		int data[24];
+		std::array<int, 24> data = {};
 		for(size_t i = 0; i < 24; ++i)
 		{
 			data[i] = static_cast<int>(i);
 		}
 
-		nd_span<int> span(data, 2, 3, 4);
+		nd_span<int> span(data.data(), 2, 3, 4);
 		auto slice = span.slice(0, 1); // Second layer
 
 		REQUIRE(slice.rank() == 2);
@@ -228,13 +229,13 @@ TEST_CASE("nd_span - Slice", "[nd_span][slice]")
 
 	SECTION("Slice 2D to 1D")
 	{
-		int data[12];
+		std::array<int, 12> data = {};
 		for(size_t i = 0; i < 12; ++i)
 		{
 			data[i] = static_cast<int>(i);
 		}
 
-		nd_span<int> span(data, 3, 4);
+		nd_span<int> span(data.data(), 3, 4);
 		auto slice = span.slice(0, 1); // Second row
 
 		REQUIRE(slice.rank() == 1);
@@ -245,8 +246,8 @@ TEST_CASE("nd_span - Slice", "[nd_span][slice]")
 
 	SECTION("Slice modifications affect original")
 	{
-		int data[60] = {};
-		nd_span<int> span(data, 3, 4, 5);
+		std::array<int, 60> data = {};
+		nd_span<int> span(data.data(), 3, 4, 5);
 
 		auto slice = span.slice(0, 1);
 		slice(0, 0) = 99;
@@ -256,8 +257,8 @@ TEST_CASE("nd_span - Slice", "[nd_span][slice]")
 
 	SECTION("Invalid slice throws")
 	{
-		int data[12] = {};
-		nd_span<int> span(data, 3, 4);
+		std::array<int, 12> data = {};
+		nd_span<int> span(data.data(), 3, 4);
 		REQUIRE_THROWS_AS(span.slice(2, 0), std::out_of_range); // dim >= rank
 		REQUIRE_THROWS_AS(span.slice(0, 3), std::out_of_range); // index >= extent
 	}
@@ -267,8 +268,8 @@ TEST_CASE("nd_span - Properties", "[nd_span][properties]")
 {
 	SECTION("Rank and extents")
 	{
-		int data[24] = {};
-		nd_span<int> span(data, 2, 3, 4);
+		std::array<int, 24> data = {};
+		nd_span<int> span(data.data(), 2, 3, 4);
 
 		REQUIRE(span.rank() == 3);
 		REQUIRE(span.extent(0) == 2);
@@ -279,17 +280,17 @@ TEST_CASE("nd_span - Properties", "[nd_span][properties]")
 
 	SECTION("Data pointer")
 	{
-		int data[6] = {1, 2, 3, 4, 5, 6};
-		nd_span<int> span(data, 2, 3);
+		std::array<int, 6> data = {1, 2, 3, 4, 5, 6};
+		nd_span<int> span(data.data(), 2, 3);
 
-		REQUIRE(span.data() == data);
+		REQUIRE(span.data() == data.data());
 		REQUIRE(span.data()[0] == 1);
 	}
 
 	SECTION("Invalid extent throws")
 	{
-		int data[6] = {};
-		nd_span<int> span(data, 2, 3);
+		std::array<int, 6> data = {};
+		nd_span<int> span(data.data(), 2, 3);
 		REQUIRE_THROWS_AS(span.extent(2), std::out_of_range);
 	}
 }
@@ -298,8 +299,8 @@ TEST_CASE("nd_span - Shape transforms", "[nd_span][reshape][transpose][flatten][
 {
 	SECTION("Reshape and flatten")
 	{
-		int data[6] = {};
-		nd_span<int> span(data, 2, 3);
+		std::array<int, 6> data = {};
+		nd_span<int> span(data.data(), 2, 3);
 		int value = 0;
 		for(auto& v : span)
 		{
@@ -320,16 +321,16 @@ TEST_CASE("nd_span - Shape transforms", "[nd_span][reshape][transpose][flatten][
 
 	SECTION("Reshape on non-contiguous view throws")
 	{
-		int data[16] = {};
-		nd_span<int> span(data, 4, 4);
+		std::array<int, 16> data = {};
+		nd_span<int> span(data.data(), 4, 4);
 		auto cols = span.subspan(1, 1, 3);
 		REQUIRE_THROWS_AS(cols.reshape(2, 4), std::runtime_error);
 	}
 
 	SECTION("Squeeze removes singleton dimensions")
 	{
-		int data[6] = {};
-		nd_span<int> span(data, {1, 3, 1, 2});
+		std::array<int, 6> data = {};
+		nd_span<int> span(data.data(), {1, 3, 1, 2});
 		auto squeezed = span.squeeze();
 		REQUIRE(squeezed.rank() == 2);
 		REQUIRE(squeezed.extent(0) == 3);
@@ -338,8 +339,8 @@ TEST_CASE("nd_span - Shape transforms", "[nd_span][reshape][transpose][flatten][
 
 	SECTION("Transpose and T")
 	{
-		int data[6] = {};
-		nd_span<int> span(data, 2, 3);
+		std::array<int, 6> data = {};
+		nd_span<int> span(data.data(), 2, 3);
 		int value = 0;
 		for(auto& v : span)
 		{
@@ -363,8 +364,8 @@ TEST_CASE("nd_span - Iterators and extents", "[nd_span][iterators][extents][stri
 {
 	SECTION("Stride values")
 	{
-		int data[24] = {};
-		nd_span<int> span(data, 2, 3, 4);
+		std::array<int, 24> data = {};
+		nd_span<int> span(data.data(), 2, 3, 4);
 		REQUIRE(span.stride(0) == 12);
 		REQUIRE(span.stride(1) == 4);
 		REQUIRE(span.stride(2) == 1);
@@ -372,8 +373,8 @@ TEST_CASE("nd_span - Iterators and extents", "[nd_span][iterators][extents][stri
 
 	SECTION("Extents view")
 	{
-		int data[24] = {};
-		nd_span<int> span(data, 2, 3, 4);
+		std::array<int, 24> data = {};
+		nd_span<int> span(data.data(), 2, 3, 4);
 		auto extents = span.extents();
 		std::vector<size_t> values(extents.begin(), extents.end());
 		REQUIRE(values.size() == 3);
@@ -384,8 +385,8 @@ TEST_CASE("nd_span - Iterators and extents", "[nd_span][iterators][extents][stri
 
 	SECTION("Flat iteration")
 	{
-		int data[6] = {};
-		nd_span<int> span(data, 2, 3);
+		std::array<int, 6> data = {};
+		nd_span<int> span(data.data(), 2, 3);
 		int value = 1;
 		for(auto& v : span)
 		{
@@ -397,8 +398,8 @@ TEST_CASE("nd_span - Iterators and extents", "[nd_span][iterators][extents][stri
 
 	SECTION("Iterator access")
 	{
-		int data[4] = {5, 5, 5, 5};
-		nd_span<int> span(data, 2, 2);
+		std::array<int, 4> data = {5, 5, 5, 5};
+		nd_span<int> span(data.data(), 2, 2);
 		REQUIRE(span.begin() != span.end());
 		REQUIRE(*span.begin() == 5);
 
@@ -413,10 +414,10 @@ TEST_CASE("nd_span - C-array interop", "[nd_span][c-interop]")
 {
 	SECTION("Wrapping C-array")
 	{
-		double* c_array = new double[12];
+		auto* c_array = new double[12];
 		for(size_t i = 0; i < 12; ++i)
 		{
-			c_array[i] = i * 1.5;
+			c_array[i] = static_cast<double>(i) * 1.5;
 		}
 
 		nd_span<double> span(c_array, 3, 4);
