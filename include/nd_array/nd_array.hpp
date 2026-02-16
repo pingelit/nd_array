@@ -86,8 +86,8 @@ namespace cppa
 			const SizeType* data = nullptr;
 			size_t size          = 0;
 
-			const SizeType* begin( ) const noexcept { return data; }
-			const SizeType* end( ) const noexcept { return data + size; }
+			[[nodiscard]] const SizeType* begin( ) const noexcept { return data; }
+			[[nodiscard]] const SizeType* end( ) const noexcept { return data + size; }
 		};
 
 		/// \brief Computes total number of elements from extents
@@ -245,8 +245,7 @@ namespace cppa
 		/// nd_span<double> span(data, dims);  // 2x3x4 array
 		/// \endcode
 		template<typename Container>
-		nd_span( pointer data, const Container& extents,
-		         typename std::enable_if<!std::is_integral<Container>::value && !std::is_same<Container, nd_span>::value>::type* = nullptr )
+		nd_span( pointer data, const Container& extents, std::enable_if_t<!std::is_integral_v<Container> && !std::is_same_v<Container, nd_span>>* = nullptr )
 		    : data_( data )
 		    , rank_( extents.size( ) )
 		{
@@ -710,7 +709,7 @@ namespace cppa
 		/// nd_array<double> arr(dims);  // 2x3x4 array
 		/// \endcode
 		template<typename Container>
-		nd_array( const Container& extents, typename std::enable_if<!std::is_integral<Container>::value && !std::is_same<Container, nd_array>::value>::type* = nullptr )
+		nd_array( const Container& extents, std::enable_if_t<!std::is_integral_v<Container> && !std::is_same_v<Container, nd_array>>* = nullptr )
 		    : rank_( extents.size( ) )
 		{
 			if( rank_ > MaxRank )
@@ -1257,7 +1256,7 @@ namespace cppa
 		template<typename U>
 		static nd_array from_span_impl( const nd_span<U, MaxRank>& span )
 		{
-			static_assert( std::is_convertible<U, Ty>::value, "Span element type must be convertible" );
+			static_assert( std::is_convertible_v<U, Ty>, "Span element type must be convertible" );
 
 			nd_array result;
 			if( span.rank( ) > MaxRank )

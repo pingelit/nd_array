@@ -4,10 +4,11 @@ Checks: >-
   bugprone-*,
   performance-*,
   modernize-*,
+  -modernize-use-trailing-return-type,
   readability-*
   -readability-cognitive-complexity,
 WarningsAsErrors: ''
-HeaderFilterRegex: 'include/nd_array/.*'
+HeaderFilterRegex: '.*nd_array.*'
 FormatStyle: file
 
 CheckOptions:
