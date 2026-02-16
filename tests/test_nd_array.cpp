@@ -222,7 +222,7 @@ TEST_CASE( "nd_array - Operations", "[nd_array][operations]" )
 	{
 		nd_array<int> arr( 3, 4 );
 		arr.fill( 10 );
-		arr.apply( []( int x ) { return x * 2; } );
+		arr.apply( []( int t_x ) { return t_x * 2; } );
 
 		for( size_t i = 0; i < 3; ++i )
 		{

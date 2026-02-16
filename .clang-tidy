@@ -1,5 +1,6 @@
 Checks: >-
   -*,
+  readability-identifier-naming,
   clang-analyzer-*,
   bugprone-*,
   performance-*,
@@ -7,26 +8,19 @@ Checks: >-
   -modernize-use-trailing-return-type,
   readability-*
   -readability-cognitive-complexity,
-WarningsAsErrors: ''
+WarningsAsErrors: 'readability-identifier-naming'
 HeaderFilterRegex: '.*nd_array.*'
 FormatStyle: file
 
 CheckOptions:
-  - key: bugprone-easily-swappable-parameters.MinimumLength
-    value: 3
-  - key: bugprone-easily-swappable-parameters.NamePrefixSuffixSilenceDissimilarityThreshold
-    value: 5
-  - key: readability-identifier-naming.NamespaceCase
-    value: lower_case
-  - key: readability-identifier-naming.ClassCase
-    value: CamelCase
-  - key: readability-identifier-naming.FunctionCase
-    value: lower_case
-  - key: readability-identifier-naming.VariableCase
-    value: lower_case
-  - key: readability-identifier-naming.MemberCase
-    value: lower_case
-  - key: readability-identifier-naming.ParameterCase
-    value: lower_case
-  - key: readability-identifier-naming.MacroDefinitionCase
-    value: UPPER_CASE
+  - { key: bugprone-easily-swappable-parameters.MinimumLength, value: 3 }
+  - { key: bugprone-easily-swappable-parameters.NamePrefixSuffixSilenceDissimilarityThreshold, value: 5 }
+  - { key: readability-identifier-naming.NamespaceCase, value: lower_case }
+  - { key: readability-identifier-naming.ClassCase, value: lower_case }
+  - { key: readability-identifier-naming.FunctionCase, value: lower_case }
+  - { key: readability-identifier-naming.VariableCase, value: lower_case }
+  - { key: readability-identifier-naming.MemberCase, value: lower_case }
+  - { key: readability-identifier-naming.ParameterCase, value: lower_case }
+  - { key: readability-identifier-naming.MacroDefinitionCase, value: UPPER_CASE }
+  - { key: readability-identifier-naming.PrivateMemberPrefix, value: m_ }
+  - { key: readability-identifier-naming.ParameterPrefix, value: t_ }
