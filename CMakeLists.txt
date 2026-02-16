@@ -81,14 +81,14 @@ if(ND_ARRAY_BUILD_TESTS)
 		set_target_properties(nd_array_tests PROPERTIES CXX_CLANG_TIDY "${ND_ARRAY_CLANG_TIDY_ARGS}")
 
 		add_custom_target(
-			clang-tidy
+			nd_array_clang-tidy
 			COMMAND ${ND_ARRAY_CLANG_TIDY} -p=${CMAKE_BINARY_DIR} ${ND_ARRAY_TEST_SOURCES}
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 			COMMENT "Run clang-tidy on unit tests"
 		)
 
 		add_custom_target(
-			clang-tidy-fix
+			nd_array_clang-tidy-fix
 			COMMAND
 				${ND_ARRAY_CLANG_TIDY} -p=${CMAKE_BINARY_DIR} -fix -fix-errors ${ND_ARRAY_TEST_SOURCES}
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
