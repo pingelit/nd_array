@@ -6,6 +6,8 @@ project(
 	LANGUAGES CXX
 )
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(ND_ARRAY_NOT_TOP_LEVEL OFF)
 if(NOT ${PROJECT_IS_TOP_LEVEL})
 	set(ND_ARRAY_NOT_TOP_LEVEL ON)
@@ -67,4 +69,30 @@ if(ND_ARRAY_BUILD_TESTS)
 	include(CTest)
 	include(${Catch2_SOURCE_DIR}/extras/Catch.cmake)
 	catch_discover_tests(nd_array_tests)
+
+	# clang-tidy integration (only if found)
+	find_program(ND_ARRAY_CLANG_TIDY NAMES clang-tidy)
+	if(ND_ARRAY_CLANG_TIDY)
+		get_target_property(ND_ARRAY_TEST_SOURCES nd_array_tests SOURCES)
+		set(ND_ARRAY_CLANG_TIDY_ARGS ${ND_ARRAY_CLANG_TIDY} -p=${CMAKE_BINARY_DIR})
+		if(WIN32)
+			list(APPEND ND_ARRAY_CLANG_TIDY_ARGS --extra-arg=/EHsc)
+		endif()
+		set_target_properties(nd_array_tests PROPERTIES CXX_CLANG_TIDY "${ND_ARRAY_CLANG_TIDY_ARGS}")
+
+		add_custom_target(
+			clang-tidy
+			COMMAND ${ND_ARRAY_CLANG_TIDY} -p=${CMAKE_BINARY_DIR} ${ND_ARRAY_TEST_SOURCES}
+			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+			COMMENT "Run clang-tidy on unit tests"
+		)
+
+		add_custom_target(
+			clang-tidy-fix
+			COMMAND
+				${ND_ARRAY_CLANG_TIDY} -p=${CMAKE_BINARY_DIR} -fix -fix-errors ${ND_ARRAY_TEST_SOURCES}
+			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+			COMMENT "Run clang-tidy and apply fixes to unit tests"
+		)
+	endif()
 endif()
