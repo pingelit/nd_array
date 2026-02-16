@@ -1,501 +1,503 @@
-#include <catch2/catch_test_macros.hpp>
-#include <catch2/catch_template_test_macros.hpp>
 #include "nd_array/nd_array.hpp"
+
+#include <catch2/catch_template_test_macros.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <vector>
+
 
 using namespace cppa;
 
-TEST_CASE("nd_array - Construction", "[nd_array][construction]")
+TEST_CASE( "nd_array - Construction", "[nd_array][construction]" )
 {
-	SECTION("Default constructor")
+	SECTION( "Default constructor" )
 	{
 		nd_array<int> arr;
-		REQUIRE(arr.rank() == 0);
-		REQUIRE(arr.size() == 0);
+		REQUIRE( arr.rank( ) == 0 );
+		REQUIRE( arr.size( ) == 0 );
 	}
 
-	SECTION("Variadic constructor - 1D")
+	SECTION( "Variadic constructor - 1D" )
 	{
-		nd_array<int> arr(10);
-		REQUIRE(arr.rank() == 1);
-		REQUIRE(arr.size() == 10);
-		REQUIRE(arr.extent(0) == 10);
+		nd_array<int> arr( 10 );
+		REQUIRE( arr.rank( ) == 1 );
+		REQUIRE( arr.size( ) == 10 );
+		REQUIRE( arr.extent( 0 ) == 10 );
 	}
 
-	SECTION("Variadic constructor - 2D")
+	SECTION( "Variadic constructor - 2D" )
 	{
-		nd_array<double> arr(3, 4);
-		REQUIRE(arr.rank() == 2);
-		REQUIRE(arr.size() == 12);
-		REQUIRE(arr.extent(0) == 3);
-		REQUIRE(arr.extent(1) == 4);
+		nd_array<double> arr( 3, 4 );
+		REQUIRE( arr.rank( ) == 2 );
+		REQUIRE( arr.size( ) == 12 );
+		REQUIRE( arr.extent( 0 ) == 3 );
+		REQUIRE( arr.extent( 1 ) == 4 );
 	}
 
-	SECTION("Variadic constructor - 3D")
+	SECTION( "Variadic constructor - 3D" )
 	{
-		nd_array<float> arr(2, 3, 4);
-		REQUIRE(arr.rank() == 3);
-		REQUIRE(arr.size() == 24);
-		REQUIRE(arr.extent(0) == 2);
-		REQUIRE(arr.extent(1) == 3);
-		REQUIRE(arr.extent(2) == 4);
+		nd_array<float> arr( 2, 3, 4 );
+		REQUIRE( arr.rank( ) == 3 );
+		REQUIRE( arr.size( ) == 24 );
+		REQUIRE( arr.extent( 0 ) == 2 );
+		REQUIRE( arr.extent( 1 ) == 3 );
+		REQUIRE( arr.extent( 2 ) == 4 );
 	}
 
-	SECTION("Initializer list constructor")
+	SECTION( "Initializer list constructor" )
 	{
-		nd_array<int> arr({2, 3, 4});
-		REQUIRE(arr.rank() == 3);
-		REQUIRE(arr.size() == 24);
-		REQUIRE(arr.extent(0) == 2);
-		REQUIRE(arr.extent(1) == 3);
-		REQUIRE(arr.extent(2) == 4);
+		nd_array<int> arr( { 2, 3, 4 } );
+		REQUIRE( arr.rank( ) == 3 );
+		REQUIRE( arr.size( ) == 24 );
+		REQUIRE( arr.extent( 0 ) == 2 );
+		REQUIRE( arr.extent( 1 ) == 3 );
+		REQUIRE( arr.extent( 2 ) == 4 );
 	}
 
-	SECTION("Container constructor - vector")
+	SECTION( "Container constructor - vector" )
 	{
-		std::vector<size_t> extents = {2, 3, 4};
-		nd_array<int> arr(extents);
-		REQUIRE(arr.rank() == 3);
-		REQUIRE(arr.size() == 24);
-		REQUIRE(arr.extent(0) == 2);
-		REQUIRE(arr.extent(1) == 3);
-		REQUIRE(arr.extent(2) == 4);
+		std::vector<size_t> extents = { 2, 3, 4 };
+		nd_array<int> arr( extents );
+		REQUIRE( arr.rank( ) == 3 );
+		REQUIRE( arr.size( ) == 24 );
+		REQUIRE( arr.extent( 0 ) == 2 );
+		REQUIRE( arr.extent( 1 ) == 3 );
+		REQUIRE( arr.extent( 2 ) == 4 );
 	}
 }
 
-TEST_CASE("nd_array - Element access", "[nd_array][access]")
+TEST_CASE( "nd_array - Element access", "[nd_array][access]" )
 {
-	SECTION("1D array access")
+	SECTION( "1D array access" )
 	{
-		nd_array<int> arr(5);
-		for(size_t i = 0; i < 5; ++i)
+		nd_array<int> arr( 5 );
+		for( size_t i = 0; i < 5; ++i )
 		{
-			arr(i) = static_cast<int>(i * 10);
+			arr( i ) = static_cast<int>( i * 10 );
 		}
 
-		for(size_t i = 0; i < 5; ++i)
+		for( size_t i = 0; i < 5; ++i )
 		{
-			REQUIRE(arr(i) == static_cast<int>(i * 10));
+			REQUIRE( arr( i ) == static_cast<int>( i * 10 ) );
 		}
 	}
 
-	SECTION("2D array access")
+	SECTION( "2D array access" )
 	{
-		nd_array<int> arr(3, 4);
-		for(size_t i = 0; i < 3; ++i)
+		nd_array<int> arr( 3, 4 );
+		for( size_t i = 0; i < 3; ++i )
 		{
-			for(size_t j = 0; j < 4; ++j)
+			for( size_t j = 0; j < 4; ++j )
 			{
-				arr(i, j) = static_cast<int>(i * 4 + j);
+				arr( i, j ) = static_cast<int>( i * 4 + j );
 			}
 		}
 
-		for(size_t i = 0; i < 3; ++i)
+		for( size_t i = 0; i < 3; ++i )
 		{
-			for(size_t j = 0; j < 4; ++j)
+			for( size_t j = 0; j < 4; ++j )
 			{
-				REQUIRE(arr(i, j) == static_cast<int>(i * 4 + j));
+				REQUIRE( arr( i, j ) == static_cast<int>( i * 4 + j ) );
 			}
 		}
 	}
 
-	SECTION("3D array access")
+	SECTION( "3D array access" )
 	{
-		nd_array<int> arr(2, 3, 4);
+		nd_array<int> arr( 2, 3, 4 );
 		int counter = 0;
-		for(size_t i = 0; i < 2; ++i)
+		for( size_t i = 0; i < 2; ++i )
 		{
-			for(size_t j = 0; j < 3; ++j)
+			for( size_t j = 0; j < 3; ++j )
 			{
-				for(size_t k = 0; k < 4; ++k)
+				for( size_t k = 0; k < 4; ++k )
 				{
-					arr(i, j, k) = counter++;
+					arr( i, j, k ) = counter++;
 				}
 			}
 		}
 
 		counter = 0;
-		for(size_t i = 0; i < 2; ++i)
+		for( size_t i = 0; i < 2; ++i )
 		{
-			for(size_t j = 0; j < 3; ++j)
+			for( size_t j = 0; j < 3; ++j )
 			{
-				for(size_t k = 0; k < 4; ++k)
+				for( size_t k = 0; k < 4; ++k )
 				{
-					REQUIRE(arr(i, j, k) == counter++);
+					REQUIRE( arr( i, j, k ) == counter++ );
 				}
 			}
 		}
 	}
 
-	SECTION("Out of bounds access throws")
+	SECTION( "Out of bounds access throws" )
 	{
-		nd_array<int> arr(3, 4);
-		REQUIRE_THROWS_AS(arr(3, 0), std::out_of_range);
-		REQUIRE_THROWS_AS(arr(0, 4), std::out_of_range);
+		nd_array<int> arr( 3, 4 );
+		REQUIRE_THROWS_AS( arr( 3, 0 ), std::out_of_range );
+		REQUIRE_THROWS_AS( arr( 0, 4 ), std::out_of_range );
 	}
 }
 
-TEST_CASE("nd_array - Copy semantics", "[nd_array][copy]")
+TEST_CASE( "nd_array - Copy semantics", "[nd_array][copy]" )
 {
-	SECTION("Copy constructor")
+	SECTION( "Copy constructor" )
 	{
-		nd_array<int> arr1(3, 4);
-		arr1.fill(42);
+		nd_array<int> arr1( 3, 4 );
+		arr1.fill( 42 );
 
 		nd_array<int> arr2 = arr1;
 
-		REQUIRE(arr2.rank() == arr1.rank());
-		REQUIRE(arr2.size() == arr1.size());
-		REQUIRE(arr2.extent(0) == arr1.extent(0));
-		REQUIRE(arr2.extent(1) == arr1.extent(1));
+		REQUIRE( arr2.rank( ) == arr1.rank( ) );
+		REQUIRE( arr2.size( ) == arr1.size( ) );
+		REQUIRE( arr2.extent( 0 ) == arr1.extent( 0 ) );
+		REQUIRE( arr2.extent( 1 ) == arr1.extent( 1 ) );
 
 		// Verify deep copy
-		arr1.fill(99);
-		REQUIRE(arr2(0, 0) == 42);
-		REQUIRE(arr1(0, 0) == 99);
+		arr1.fill( 99 );
+		REQUIRE( arr2( 0, 0 ) == 42 );
+		REQUIRE( arr1( 0, 0 ) == 99 );
 	}
 
-	SECTION("Copy assignment")
+	SECTION( "Copy assignment" )
 	{
-		nd_array<int> arr1(3, 4);
-		arr1.fill(42);
+		nd_array<int> arr1( 3, 4 );
+		arr1.fill( 42 );
 
-		nd_array<int> arr2(2, 2);
+		nd_array<int> arr2( 2, 2 );
 		arr2 = arr1;
 
-		REQUIRE(arr2.rank() == arr1.rank());
-		REQUIRE(arr2.size() == arr1.size());
+		REQUIRE( arr2.rank( ) == arr1.rank( ) );
+		REQUIRE( arr2.size( ) == arr1.size( ) );
 
 		// Verify deep copy
-		arr1.fill(99);
-		REQUIRE(arr2(0, 0) == 42);
+		arr1.fill( 99 );
+		REQUIRE( arr2( 0, 0 ) == 42 );
 	}
 }
 
-TEST_CASE("nd_array - Move semantics", "[nd_array][move]")
+TEST_CASE( "nd_array - Move semantics", "[nd_array][move]" )
 {
-	SECTION("Move constructor")
+	SECTION( "Move constructor" )
 	{
-		nd_array<int> arr1(3, 4);
-		arr1.fill(42);
+		nd_array<int> arr1( 3, 4 );
+		arr1.fill( 42 );
 
-		nd_array<int> arr2 = std::move(arr1);
+		nd_array<int> arr2 = std::move( arr1 );
 
-		REQUIRE(arr2.rank() == 2);
-		REQUIRE(arr2.size() == 12);
-		REQUIRE(arr2(0, 0) == 42);
+		REQUIRE( arr2.rank( ) == 2 );
+		REQUIRE( arr2.size( ) == 12 );
+		REQUIRE( arr2( 0, 0 ) == 42 );
 	}
 
-	SECTION("Move assignment")
+	SECTION( "Move assignment" )
 	{
-		nd_array<int> arr1(3, 4);
-		arr1.fill(42);
+		nd_array<int> arr1( 3, 4 );
+		arr1.fill( 42 );
 
 		nd_array<int> arr2;
-		arr2 = std::move(arr1);
+		arr2 = std::move( arr1 );
 
-		REQUIRE(arr2.rank() == 2);
-		REQUIRE(arr2.size() == 12);
-		REQUIRE(arr2(0, 0) == 42);
+		REQUIRE( arr2.rank( ) == 2 );
+		REQUIRE( arr2.size( ) == 12 );
+		REQUIRE( arr2( 0, 0 ) == 42 );
 	}
 }
 
-TEST_CASE("nd_array - Operations", "[nd_array][operations]")
+TEST_CASE( "nd_array - Operations", "[nd_array][operations]" )
 {
-	SECTION("Fill operation")
+	SECTION( "Fill operation" )
 	{
-		nd_array<int> arr(3, 4);
-		arr.fill(42);
+		nd_array<int> arr( 3, 4 );
+		arr.fill( 42 );
 
-		for(size_t i = 0; i < 3; ++i)
+		for( size_t i = 0; i < 3; ++i )
 		{
-			for(size_t j = 0; j < 4; ++j)
+			for( size_t j = 0; j < 4; ++j )
 			{
-				REQUIRE(arr(i, j) == 42);
+				REQUIRE( arr( i, j ) == 42 );
 			}
 		}
 	}
 
-	SECTION("Apply operation")
+	SECTION( "Apply operation" )
 	{
-		nd_array<int> arr(3, 4);
-		arr.fill(10);
-		arr.apply([](int x) { return x * 2; });
+		nd_array<int> arr( 3, 4 );
+		arr.fill( 10 );
+		arr.apply( []( int x ) { return x * 2; } );
 
-		for(size_t i = 0; i < 3; ++i)
+		for( size_t i = 0; i < 3; ++i )
 		{
-			for(size_t j = 0; j < 4; ++j)
+			for( size_t j = 0; j < 4; ++j )
 			{
-				REQUIRE(arr(i, j) == 20);
+				REQUIRE( arr( i, j ) == 20 );
 			}
 		}
 	}
 }
 
-TEST_CASE("nd_array - Subspan", "[nd_array][subspan]")
+TEST_CASE( "nd_array - Subspan", "[nd_array][subspan]" )
 {
-	SECTION("Subspan along dimension 0")
+	SECTION( "Subspan along dimension 0" )
 	{
-		nd_array<int> arr(4, 5);
-		for(size_t i = 0; i < 4; ++i)
+		nd_array<int> arr( 4, 5 );
+		for( size_t i = 0; i < 4; ++i )
 		{
-			for(size_t j = 0; j < 5; ++j)
+			for( size_t j = 0; j < 5; ++j )
 			{
-				arr(i, j) = static_cast<int>(i * 5 + j);
+				arr( i, j ) = static_cast<int>( i * 5 + j );
 			}
 		}
 
-		auto sub = arr.subspan(0, 1, 3); // rows 1-2
-		REQUIRE(sub.rank() == 2);
-		REQUIRE(sub.extent(0) == 2);
-		REQUIRE(sub.extent(1) == 5);
-		REQUIRE(sub(0, 0) == 5);
-		REQUIRE(sub(1, 0) == 10);
+		auto sub = arr.subspan( 0, 1, 3 ); // rows 1-2
+		REQUIRE( sub.rank( ) == 2 );
+		REQUIRE( sub.extent( 0 ) == 2 );
+		REQUIRE( sub.extent( 1 ) == 5 );
+		REQUIRE( sub( 0, 0 ) == 5 );
+		REQUIRE( sub( 1, 0 ) == 10 );
 	}
 
-	SECTION("Subspan along dimension 1")
+	SECTION( "Subspan along dimension 1" )
 	{
-		nd_array<int> arr(3, 5);
-		for(size_t i = 0; i < 3; ++i)
+		nd_array<int> arr( 3, 5 );
+		for( size_t i = 0; i < 3; ++i )
 		{
-			for(size_t j = 0; j < 5; ++j)
+			for( size_t j = 0; j < 5; ++j )
 			{
-				arr(i, j) = static_cast<int>(i * 5 + j);
+				arr( i, j ) = static_cast<int>( i * 5 + j );
 			}
 		}
 
-		auto sub = arr.subspan(1, 1, 4); // cols 1-3
-		REQUIRE(sub.rank() == 2);
-		REQUIRE(sub.extent(0) == 3);
-		REQUIRE(sub.extent(1) == 3);
-		REQUIRE(sub(0, 0) == 1);
-		REQUIRE(sub(0, 1) == 2);
+		auto sub = arr.subspan( 1, 1, 4 ); // cols 1-3
+		REQUIRE( sub.rank( ) == 2 );
+		REQUIRE( sub.extent( 0 ) == 3 );
+		REQUIRE( sub.extent( 1 ) == 3 );
+		REQUIRE( sub( 0, 0 ) == 1 );
+		REQUIRE( sub( 0, 1 ) == 2 );
 	}
 
-	SECTION("Subspan modifications affect original")
+	SECTION( "Subspan modifications affect original" )
 	{
-		nd_array<int> arr(3, 4);
-		arr.fill(0);
+		nd_array<int> arr( 3, 4 );
+		arr.fill( 0 );
 
-		auto sub = arr.subspan(0, 1, 2);
-		sub(0, 0) = 99;
+		auto sub    = arr.subspan( 0, 1, 2 );
+		sub( 0, 0 ) = 99;
 
-		REQUIRE(arr(1, 0) == 99);
+		REQUIRE( arr( 1, 0 ) == 99 );
 	}
 
-	SECTION("Invalid subspan throws")
+	SECTION( "Invalid subspan throws" )
 	{
-		nd_array<int> arr(3, 4);
-		REQUIRE_THROWS_AS(arr.subspan(0, 2, 1), std::out_of_range); // start >= end
-		REQUIRE_THROWS_AS(arr.subspan(0, 0, 5), std::out_of_range); // end > extent
-		REQUIRE_THROWS_AS(arr.subspan(2, 0, 1), std::out_of_range); // dim >= rank
+		nd_array<int> arr( 3, 4 );
+		REQUIRE_THROWS_AS( arr.subspan( 0, 2, 1 ), std::out_of_range ); // start >= end
+		REQUIRE_THROWS_AS( arr.subspan( 0, 0, 5 ), std::out_of_range ); // end > extent
+		REQUIRE_THROWS_AS( arr.subspan( 2, 0, 1 ), std::out_of_range ); // dim >= rank
 	}
 }
 
-TEST_CASE("nd_array - Slice", "[nd_array][slice]")
+TEST_CASE( "nd_array - Slice", "[nd_array][slice]" )
 {
-	SECTION("Slice 3D to 2D")
+	SECTION( "Slice 3D to 2D" )
 	{
-		nd_array<int> arr(2, 3, 4);
+		nd_array<int> arr( 2, 3, 4 );
 		int counter = 0;
-		for(size_t i = 0; i < 2; ++i)
+		for( size_t i = 0; i < 2; ++i )
 		{
-			for(size_t j = 0; j < 3; ++j)
+			for( size_t j = 0; j < 3; ++j )
 			{
-				for(size_t k = 0; k < 4; ++k)
+				for( size_t k = 0; k < 4; ++k )
 				{
-					arr(i, j, k) = counter++;
+					arr( i, j, k ) = counter++;
 				}
 			}
 		}
 
-		auto slice = arr.slice(0, 1); // Second layer
-		REQUIRE(slice.rank() == 2);
-		REQUIRE(slice.extent(0) == 3);
-		REQUIRE(slice.extent(1) == 4);
-		REQUIRE(slice(0, 0) == 12); // First element of second layer
+		auto slice = arr.slice( 0, 1 ); // Second layer
+		REQUIRE( slice.rank( ) == 2 );
+		REQUIRE( slice.extent( 0 ) == 3 );
+		REQUIRE( slice.extent( 1 ) == 4 );
+		REQUIRE( slice( 0, 0 ) == 12 ); // First element of second layer
 	}
 
-	SECTION("Slice 2D to 1D")
+	SECTION( "Slice 2D to 1D" )
 	{
-		nd_array<int> arr(3, 4);
-		for(size_t i = 0; i < 3; ++i)
+		nd_array<int> arr( 3, 4 );
+		for( size_t i = 0; i < 3; ++i )
 		{
-			for(size_t j = 0; j < 4; ++j)
+			for( size_t j = 0; j < 4; ++j )
 			{
-				arr(i, j) = static_cast<int>(i * 4 + j);
+				arr( i, j ) = static_cast<int>( i * 4 + j );
 			}
 		}
 
-		auto slice = arr.slice(0, 1); // Second row
-		REQUIRE(slice.rank() == 1);
-		REQUIRE(slice.extent(0) == 4);
-		REQUIRE(slice(0) == 4);
-		REQUIRE(slice(1) == 5);
+		auto slice = arr.slice( 0, 1 ); // Second row
+		REQUIRE( slice.rank( ) == 1 );
+		REQUIRE( slice.extent( 0 ) == 4 );
+		REQUIRE( slice( 0 ) == 4 );
+		REQUIRE( slice( 1 ) == 5 );
 	}
 
-	SECTION("Slice modifications affect original")
+	SECTION( "Slice modifications affect original" )
 	{
-		nd_array<int> arr(3, 4, 5);
-		arr.fill(0);
+		nd_array<int> arr( 3, 4, 5 );
+		arr.fill( 0 );
 
-		auto slice = arr.slice(0, 1);
-		slice(0, 0) = 99;
+		auto slice    = arr.slice( 0, 1 );
+		slice( 0, 0 ) = 99;
 
-		REQUIRE(arr(1, 0, 0) == 99);
-	}
-}
-
-TEST_CASE("nd_array - Properties", "[nd_array][properties]")
-{
-	SECTION("Rank and size")
-	{
-		nd_array<int> arr(2, 3, 4);
-		REQUIRE(arr.rank() == 3);
-		REQUIRE(arr.size() == 24);
-		REQUIRE(arr.max_rank() == 8);
-	}
-
-	SECTION("Extents")
-	{
-		nd_array<int> arr(2, 3, 4);
-		REQUIRE(arr.extent(0) == 2);
-		REQUIRE(arr.extent(1) == 3);
-		REQUIRE(arr.extent(2) == 4);
-	}
-
-	SECTION("Data pointer")
-	{
-		nd_array<int> arr(2, 3);
-		arr(0, 0) = 42;
-		REQUIRE(arr.data()[0] == 42);
-	}
-
-	SECTION("Invalid extent throws")
-	{
-		nd_array<int> arr(2, 3);
-		REQUIRE_THROWS_AS(arr.extent(2), std::out_of_range);
+		REQUIRE( arr( 1, 0, 0 ) == 99 );
 	}
 }
 
-TEST_CASE("nd_array - Shape transforms", "[nd_array][reshape][transpose][flatten][squeeze]")
+TEST_CASE( "nd_array - Properties", "[nd_array][properties]" )
 {
-	SECTION("Reshape and flatten")
+	SECTION( "Rank and size" )
 	{
-		nd_array<int> arr(2, 3);
+		nd_array<int> arr( 2, 3, 4 );
+		REQUIRE( arr.rank( ) == 3 );
+		REQUIRE( arr.size( ) == 24 );
+		REQUIRE( arr.max_rank( ) == 8 );
+	}
+
+	SECTION( "Extents" )
+	{
+		nd_array<int> arr( 2, 3, 4 );
+		REQUIRE( arr.extent( 0 ) == 2 );
+		REQUIRE( arr.extent( 1 ) == 3 );
+		REQUIRE( arr.extent( 2 ) == 4 );
+	}
+
+	SECTION( "Data pointer" )
+	{
+		nd_array<int> arr( 2, 3 );
+		arr( 0, 0 ) = 42;
+		REQUIRE( arr.data( )[0] == 42 );
+	}
+
+	SECTION( "Invalid extent throws" )
+	{
+		nd_array<int> arr( 2, 3 );
+		REQUIRE_THROWS_AS( arr.extent( 2 ), std::out_of_range );
+	}
+}
+
+TEST_CASE( "nd_array - Shape transforms", "[nd_array][reshape][transpose][flatten][squeeze]" )
+{
+	SECTION( "Reshape and flatten" )
+	{
+		nd_array<int> arr( 2, 3 );
 		int value = 0;
-		for(auto& v : arr)
+		for( auto& v: arr )
 		{
 			v = value++;
 		}
 
-		auto reshaped = arr.reshape(3, 2);
-		REQUIRE(reshaped.rank() == 2);
-		REQUIRE(reshaped.extent(0) == 3);
-		REQUIRE(reshaped.extent(1) == 2);
-		REQUIRE(reshaped(1, 0) == 2);
+		auto reshaped = arr.reshape( 3, 2 );
+		REQUIRE( reshaped.rank( ) == 2 );
+		REQUIRE( reshaped.extent( 0 ) == 3 );
+		REQUIRE( reshaped.extent( 1 ) == 2 );
+		REQUIRE( reshaped( 1, 0 ) == 2 );
 
-		auto flat = arr.flatten();
-		REQUIRE(flat.rank() == 1);
-		REQUIRE(flat.extent(0) == arr.size());
-		REQUIRE(flat(4) == 4);
+		auto flat = arr.flatten( );
+		REQUIRE( flat.rank( ) == 1 );
+		REQUIRE( flat.extent( 0 ) == arr.size( ) );
+		REQUIRE( flat( 4 ) == 4 );
 	}
 
-	SECTION("Squeeze removes singleton dimensions")
+	SECTION( "Squeeze removes singleton dimensions" )
 	{
-		nd_array<int> arr({1, 3, 1, 2});
-		auto squeezed = arr.squeeze();
-		REQUIRE(squeezed.rank() == 2);
-		REQUIRE(squeezed.extent(0) == 3);
-		REQUIRE(squeezed.extent(1) == 2);
+		nd_array<int> arr( { 1, 3, 1, 2 } );
+		auto squeezed = arr.squeeze( );
+		REQUIRE( squeezed.rank( ) == 2 );
+		REQUIRE( squeezed.extent( 0 ) == 3 );
+		REQUIRE( squeezed.extent( 1 ) == 2 );
 	}
 
-	SECTION("Transpose and T")
+	SECTION( "Transpose and T" )
 	{
-		nd_array<int> arr(2, 3);
+		nd_array<int> arr( 2, 3 );
 		int value = 0;
-		for(auto& v : arr)
+		for( auto& v: arr )
 		{
 			v = value++;
 		}
 
-		auto transposed = arr.transpose({1, 0});
-		REQUIRE(transposed.rank() == 2);
-		REQUIRE(transposed.extent(0) == 3);
-		REQUIRE(transposed.extent(1) == 2);
-		REQUIRE(transposed(1, 0) == arr(0, 1));
+		auto transposed = arr.transpose( { 1, 0 } );
+		REQUIRE( transposed.rank( ) == 2 );
+		REQUIRE( transposed.extent( 0 ) == 3 );
+		REQUIRE( transposed.extent( 1 ) == 2 );
+		REQUIRE( transposed( 1, 0 ) == arr( 0, 1 ) );
 
-		auto tview = arr.T();
-		REQUIRE(tview.extent(0) == 3);
-		REQUIRE(tview.extent(1) == 2);
-		REQUIRE(tview(2, 1) == arr(1, 2));
+		auto tview = arr.T( );
+		REQUIRE( tview.extent( 0 ) == 3 );
+		REQUIRE( tview.extent( 1 ) == 2 );
+		REQUIRE( tview( 2, 1 ) == arr( 1, 2 ) );
 	}
 }
 
-TEST_CASE("nd_array - Iterators and extents", "[nd_array][iterators][extents][stride]")
+TEST_CASE( "nd_array - Iterators and extents", "[nd_array][iterators][extents][stride]" )
 {
-	SECTION("Stride values")
+	SECTION( "Stride values" )
 	{
-		nd_array<int> arr(2, 3, 4);
-		REQUIRE(arr.stride(0) == 12);
-		REQUIRE(arr.stride(1) == 4);
-		REQUIRE(arr.stride(2) == 1);
+		nd_array<int> arr( 2, 3, 4 );
+		REQUIRE( arr.stride( 0 ) == 12 );
+		REQUIRE( arr.stride( 1 ) == 4 );
+		REQUIRE( arr.stride( 2 ) == 1 );
 	}
 
-	SECTION("Extents view")
+	SECTION( "Extents view" )
 	{
-		nd_array<int> arr(2, 3, 4);
-		auto extents = arr.extents();
-		std::vector<size_t> values(extents.begin(), extents.end());
-		REQUIRE(values.size() == 3);
-		REQUIRE(values[0] == 2);
-		REQUIRE(values[1] == 3);
-		REQUIRE(values[2] == 4);
+		nd_array<int> arr( 2, 3, 4 );
+		auto extents = arr.extents( );
+		std::vector<size_t> values( extents.begin( ), extents.end( ) );
+		REQUIRE( values.size( ) == 3 );
+		REQUIRE( values[0] == 2 );
+		REQUIRE( values[1] == 3 );
+		REQUIRE( values[2] == 4 );
 	}
 
-	SECTION("Flat iteration")
+	SECTION( "Flat iteration" )
 	{
-		nd_array<int> arr(2, 3);
+		nd_array<int> arr( 2, 3 );
 		int value = 1;
-		for(auto& v : arr)
+		for( auto& v: arr )
 		{
 			v = value++;
 		}
-		REQUIRE(arr(0, 0) == 1);
-		REQUIRE(arr(1, 2) == 6);
+		REQUIRE( arr( 0, 0 ) == 1 );
+		REQUIRE( arr( 1, 2 ) == 6 );
 	}
 
-	SECTION("Iterator access")
+	SECTION( "Iterator access" )
 	{
-		nd_array<int> arr(2, 2);
-		arr.fill(5);
-		REQUIRE(arr.begin() != arr.end());
-		REQUIRE(*arr.begin() == 5);
+		nd_array<int> arr( 2, 2 );
+		arr.fill( 5 );
+		REQUIRE( arr.begin( ) != arr.end( ) );
+		REQUIRE( *arr.begin( ) == 5 );
 
 		const nd_array<int>& carr = arr;
-		REQUIRE(carr.begin() != carr.end());
-		REQUIRE(*carr.begin() == 5);
-		REQUIRE(*carr.cbegin() == 5);
+		REQUIRE( carr.begin( ) != carr.end( ) );
+		REQUIRE( *carr.begin( ) == 5 );
+		REQUIRE( *carr.cbegin( ) == 5 );
 	}
 }
 
-TEST_CASE("nd_array - Span to array", "[nd_array][span][copy]")
+TEST_CASE( "nd_array - Span to array", "[nd_array][span][copy]" )
 {
-	SECTION("Deep copy from span")
+	SECTION( "Deep copy from span" )
 	{
-		nd_array<int> arr(2, 3);
-		arr.fill(7);
-		nd_span<int> span(arr.data(), 2, 3);
+		nd_array<int> arr( 2, 3 );
+		arr.fill( 7 );
+		nd_span<int> span( arr.data( ), 2, 3 );
 
-		nd_array<int> copy_from_span = nd_array<int>::from_span(span);
-		nd_array<int> copy_ctor(span);
+		nd_array<int> copy_from_span = nd_array<int>::from_span( span );
+		nd_array<int> copy_ctor( span );
 
 		nd_array<int> assigned;
 		assigned = span;
 
-		arr.fill(9);
-		REQUIRE(copy_from_span(0, 0) == 7);
-		REQUIRE(copy_ctor(1, 2) == 7);
-		REQUIRE(assigned(0, 1) == 7);
+		arr.fill( 9 );
+		REQUIRE( copy_from_span( 0, 0 ) == 7 );
+		REQUIRE( copy_ctor( 1, 2 ) == 7 );
+		REQUIRE( assigned( 0, 1 ) == 7 );
 	}
 }
