@@ -319,7 +319,7 @@ namespace cppa
 		template<typename... Indices>
 		[[nodiscard]] const_reference operator( )( Indices... t_indices ) const
 		{
-			return data_[detail::offset_computer<MaxRank>::compute( extents_, strides_, indices... )];
+			return m_data[detail::offset_computer<MaxRank>::compute( m_extents, m_strides, t_indices... )];
 		}
 
 		/// \brief Creates a subspan by restricting a range along one dimension
@@ -777,7 +777,7 @@ namespace cppa
 		/// \brief Constructs an owning array by deep-copying an nd_span
 		/// \param t_span Source span to copy
 		/// 	hrows std::invalid_argument if span rank exceeds MaxRank
-		explicit nd_array( const nd_span<const Ty, MaxRank>& t_span ) : nd_array( from_span( span ) ) {}
+		explicit nd_array( const nd_span<const Ty, MaxRank>& t_span ) : nd_array( from_span( t_span ) ) {}
 
 		/// \brief Constructs an owning array by deep-copying an nd_span
 		/// \param t_span Source span to copy
@@ -815,7 +815,7 @@ namespace cppa
 		/// \brief Assigns from an nd_span by deep-copying its contents
 		/// \param t_span Source span to copy
 		/// \return Reference to this array
-		nd_array& operator=( const nd_span<const Ty, MaxRank>& t_span ) { return *this = from_span( span ); }
+		nd_array& operator=( const nd_span<const Ty, MaxRank>& t_span ) { return *this = from_span( t_span ); }
 
 		/// \brief Assigns from an nd_span by deep-copying its contents
 		/// \param t_span Source span to copy
@@ -826,7 +826,7 @@ namespace cppa
 		/// \param t_span Source span to copy
 		/// \return Newly allocated array with the same contents
 		/// 	hrows std::invalid_argument if span rank exceeds MaxRank
-		static nd_array from_span( const nd_span<const Ty, MaxRank>& t_span ) { return from_span_impl( span ); }
+		static nd_array from_span( const nd_span<const Ty, MaxRank>& t_span ) { return from_span_impl( t_span ); }
 
 		/// \brief Creates an owning array by deep-copying an nd_span
 		/// \param t_span Source span to copy
@@ -902,27 +902,27 @@ namespace cppa
 		/// 	hrows std::out_of_range if too many dimensions or invalid ranges
 		[[nodiscard]] nd_span<const Ty, MaxRank> subspan( std::initializer_list<std::pair<size_type, size_type>> t_ranges ) const
 		{
-			std::array<size_type, MaxRank> new_extents = extents_;
-			std::array<size_type, MaxRank> new_strides = strides_;
+			std::array<size_type, MaxRank> new_extents = m_extents;
+			std::array<size_type, MaxRank> new_strides = m_strides;
 			size_type offset                           = 0;
 			size_type dim                              = 0;
 
-			for( const auto& [start, end]: ranges )
+			for( const auto& [start, end]: t_ranges )
 			{
-				if( dim >= rank_ )
+				if( dim >= m_rank )
 				{
 					throw std::out_of_range( "Too many dimensions in subspan" );
 				}
-				if( start >= extents_[dim] || end > extents_[dim] || start >= end )
+				if( start >= m_extents[dim] || end > m_extents[dim] || start >= end )
 				{
 					throw std::out_of_range( "Invalid range for subspan" );
 				}
-				offset += start * strides_[dim];
+				offset += start * m_strides[dim];
 				new_extents[dim] = end - start;
 				++dim;
 			}
 
-			return nd_span<const Ty, MaxRank>( data_.get( ) + offset, new_extents, new_strides, rank_ );
+			return nd_span<const Ty, MaxRank>( m_data.get( ) + offset, new_extents, new_strides, m_rank );
 		}
 
 		/// \brief Creates a subspan by restricting a range along one dimension
@@ -963,23 +963,23 @@ namespace cppa
 		/// 	hrows std::out_of_range if dimension or range is invalid
 		[[nodiscard]] nd_span<const Ty, MaxRank> subspan( size_type t_dim, std::pair<size_type, size_type> t_range ) const
 		{
-			size_type start = range.first;
-			size_type end   = range.second;
-			if( dim >= rank_ )
+			size_type start = t_range.first;
+			size_type end   = t_range.second;
+			if( t_dim >= m_rank )
 			{
 				throw std::out_of_range( "Dimension out of range" );
 			}
-			if( start >= extents_[dim] || end > extents_[dim] || start >= end )
+			if( start >= m_extents[t_dim] || end > m_extents[t_dim] || start >= end )
 			{
 				throw std::out_of_range( "Invalid range for subspan" );
 			}
 
-			std::array<size_type, MaxRank> new_extents = extents_;
-			new_extents[dim]                           = end - start;
+			std::array<size_type, MaxRank> new_extents = m_extents;
+			new_extents[t_dim]                         = end - start;
 
-			size_type offset = start * strides_[dim];
+			size_type offset = start * m_strides[t_dim];
 
-			return nd_span<const T, MaxRank>( data_.get( ) + offset, new_extents, strides_, rank_ );
+			return nd_span<const Ty, MaxRank>( m_data.get( ) + offset, new_extents, m_strides, m_rank );
 		}
 
 		/// \brief Creates a lower-dimensional view by fixing one dimension's index
@@ -1036,11 +1036,11 @@ namespace cppa
 		/// 	hrows std::out_of_range if dimension or index is invalid
 		[[nodiscard]] nd_span<const Ty, MaxRank> slice( size_type t_dim, size_type t_index ) const
 		{
-			if( dim >= rank_ )
+			if( t_dim >= m_rank )
 			{
 				throw std::out_of_range( "Dimension out of range" );
 			}
-			if( index >= extents_[dim] )
+			if( t_index >= m_extents[t_dim] )
 			{
 				throw std::out_of_range( "Index out of bounds" );
 			}
@@ -1048,16 +1048,16 @@ namespace cppa
 			std::array<size_type, MaxRank> new_extents;
 			std::array<size_type, MaxRank> new_strides;
 
-			size_type new_rank = rank_ - 1;
-			size_type offset   = index * strides_[dim];
+			size_type new_rank = m_rank - 1;
+			size_type offset   = t_index * m_strides[t_dim];
 
 			size_type j = 0;
-			for( size_t i = 0; i < rank_; ++i )
+			for( size_t i = 0; i < m_rank; ++i )
 			{
-				if( i != dim )
+				if( i != t_dim )
 				{
-					new_extents[j] = extents_[i];
-					new_strides[j] = strides_[i];
+					new_extents[j] = m_extents[i];
+					new_strides[j] = m_strides[i];
 					++j;
 				}
 			}
@@ -1068,20 +1068,20 @@ namespace cppa
 				new_strides[i] = 0;
 			}
 
-			return nd_span<const Ty, MaxRank>( data_.get( ) + offset, new_extents, new_strides, new_rank );
+			return nd_span<const Ty, MaxRank>( m_data.get( ) + offset, new_extents, new_strides, new_rank );
 		}
 
 		/// \brief Reshapes the array view (row-major contiguous)
 		/// \param t_new_extents New shape extents
 		/// \return Reshaped view
-		[[nodiscard]] nd_span<Ty, MaxRank> reshape( std::initializer_list<size_type> t_new_extents ) { return reshape_impl( new_extents.begin( ), new_extents.size( ) ); }
+		[[nodiscard]] nd_span<Ty, MaxRank> reshape( std::initializer_list<size_type> t_new_extents ) { return reshape_impl( t_new_extents.begin( ), t_new_extents.size( ) ); }
 
 		/// \brief Reshapes the array view (row-major contiguous)
 		/// \param t_new_extents New shape extents
 		/// \return Reshaped const view
 		[[nodiscard]] nd_span<const Ty, MaxRank> reshape( std::initializer_list<size_type> t_new_extents ) const
 		{
-			return reshape_impl( new_extents.begin( ), new_extents.size( ) );
+			return reshape_impl( t_new_extents.begin( ), t_new_extents.size( ) );
 		}
 
 		/// \brief Reshapes the array view with variadic extents
@@ -1136,8 +1136,8 @@ namespace cppa
 		[[nodiscard]] nd_span<const Ty, MaxRank> T( ) const // NOLINT(readability-identifier-naming)
 		{
 			size_type axes_rank = 0;
-			auto axes           = make_T_axes( axes_rank );
-			return transpose_impl( axes.data( ), axes_rank, data_.get( ) );
+			auto axes           = make_t_axes( axes_rank );
+			return transpose_impl( axes.data( ), axes_rank, m_data.get( ) );
 		}
 
 		/// \brief Flattens the array into a 1D view
@@ -1154,7 +1154,7 @@ namespace cppa
 
 		/// \brief Removes dimensions of extent 1 (const)
 		/// \return Const view with singleton dimensions removed
-		[[nodiscard]] nd_span<const Ty, MaxRank> squeeze( ) const { return squeeze_impl( data_.get( ) ); }
+		[[nodiscard]] nd_span<const Ty, MaxRank> squeeze( ) const { return squeeze_impl( m_data.get( ) ); }
 
 		/// \brief Gets the size of a specific dimension
 		/// \param t_dim Dimension index (0-based)
@@ -1204,7 +1204,7 @@ namespace cppa
 
 		/// \brief Gets a pointer to the underlying data (const)
 		/// \return Const pointer to the first element
-		[[nodiscard]] const_pointer data( ) const noexcept { return data_.get( ); }
+		[[nodiscard]] const_pointer data( ) const noexcept { return m_data.get( ); }
 
 		/// \brief Returns a pointer to the first element for flat iteration
 		[[nodiscard]] pointer begin( ) noexcept { return m_data.get( ); }
@@ -1222,7 +1222,7 @@ namespace cppa
 		[[nodiscard]] const_pointer cbegin( ) const noexcept { return m_data.get( ); }
 
 		/// \brief Returns a const pointer past the last element for flat iteration
-		[[nodiscard]] const_pointer cend( ) const noexcept { return data_.get( ) + size_; }
+		[[nodiscard]] const_pointer cend( ) const noexcept { return m_data.get( ) + m_size; }
 
 		/// \brief Fills all elements with a specified value
 		/// \param t_value Value to fill the array with
