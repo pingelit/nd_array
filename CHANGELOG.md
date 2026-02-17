@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Array features: subspans from const objects, container constructors, iterators, `stride()`/`extents()`, shape ops (`reshape`, `transpose`/`T`, `flatten`, `squeeze`), and deep-copy conversion from `nd_span` to `nd_array`.
 - Tooling and docs: unit tests, mkdocs site, Doxygen docs, and version bumping config.
 - Static analysis: clang-tidy integration with follow-up fixes.
+- CI workflows for build, test on GitHub
 
 ### Changed
 

@@ -1,0 +1,131 @@
+# Based on https://github.com/cpp-best-practices/cmake_template/blob/main/.github/workflows/ci.yml
+name: ci
+on:
+  pull_request:
+    branches:
+      - '**'
+  release:
+    types: [published]
+  push:
+    branches:
+      - main
+
+env:
+  CLANG_TIDY_VERSION: "19.1.1"
+  VERBOSE: 1
+  CCACHE_BASEDIR: ~
+  CCACHE_DIR: ~/.ccache
+  CCACHE_COMPRESS: true
+  CCACHE_COMPRESSLEVEL: 6
+  CCACHE_MAXSIZE: 400M
+
+jobs:
+  Test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+
+      matrix:
+        include:
+          # Linux with Clang
+          - preset: linux-debug
+            os: ubuntu-24.04
+            compiler: llvm-19.1.1
+            gcov_executable: "llvm-cov gcov"
+
+          - preset: linux-release
+            os: ubuntu-24.04
+            compiler: llvm-19.1.1
+            gcov_executable: "llvm-cov gcov"
+
+          # Linux with GCC
+          - preset: linux-gcc-debug
+            os: ubuntu-24.04
+            compiler: gcc-11
+            gcov_executable: gcov
+
+          - preset: linux-gcc-release
+            os: ubuntu-24.04
+            compiler: gcc-11
+            gcov_executable: gcov
+
+          # Windows with Clang
+          - preset: windows-debug
+            os: windows-2022
+            compiler: llvm-19.1.1
+            gcov_executable: "llvm-cov gcov"
+
+          - preset: windows-release
+            os: windows-2022
+            compiler: llvm-19.1.1
+            gcov_executable: "llvm-cov gcov"
+
+          # Windows with MSVC
+          - preset: windows-msvc-debug
+            os: windows-2022
+            compiler: msvc
+            gcov_executable: ""
+
+          - preset: windows-msvc-release
+            os: windows-2022
+            compiler: msvc
+            gcov_executable: ""
+
+    steps:
+      - name: Check for llvm version mismatches
+        if: ${{ contains(matrix.compiler, 'llvm') && !contains(matrix.compiler, env.CLANG_TIDY_VERSION) }}
+        uses: actions/github-script@v3
+        with:
+          script: |
+            core.setFailed('There is a mismatch between configured llvm compiler and clang-tidy version chosen')
+
+      - uses: actions/checkout@v3
+
+      - name: Setup Cache
+        uses: ./.github/actions/setup_cache
+        with:
+          preset: ${{ matrix.preset }}
+
+      - name: Setup Cpp
+        uses: aminya/setup-cpp@v1
+        with:
+          compiler: ${{ matrix.compiler }}
+          vcvarsall: ${{ contains(matrix.os, 'windows') }}
+          cmake: true
+          ninja: true
+          vcpkg: false
+          ccache: true
+          clangtidy: ${{ env.CLANG_TIDY_VERSION }}
+          cppcheck: false
+          gcovr: true
+          opencppcoverage: true
+
+      - name: Configure CMake
+        run: |
+          cmake --preset ${{ matrix.preset }} -DCPM_SOURCE_CACHE=~/.cpmcache
+
+      - name: Build
+        run: |
+          cmake --build --preset ${{ matrix.preset }}
+
+      - name: Unix - Test and coverage
+        if: runner.os != 'Windows'
+        working-directory: ./build/${{ matrix.preset }}
+        run: |
+          ctest --output-on-failure
+          gcovr -j 1 --delete --root ../../ --print-summary --xml-pretty --xml coverage.xml . --gcov-executable '${{ matrix.gcov_executable }}'
+
+      - name: Windows - Test and coverage
+        if: runner.os == 'Windows'
+        working-directory: ./build/${{ matrix.preset }}
+        run: |
+          OpenCppCoverage.exe --export_type cobertura:coverage.xml --cover_children -- ctest --output-on-failure
+
+      - name: Publish to codecov
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: ${{ runner.os }}-${{ matrix.preset }}
+          name: ${{ matrix.preset }}-coverage
+          files: ./build/${{ matrix.preset }}/coverage.xml

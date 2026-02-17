@@ -1,0 +1,21 @@
+# Based on https://github.com/cpp-best-practices/cmake_template/blob/main/.github/actions/setup_cache/action.yml
+name: 'setup_cache'
+description: 'sets up the shared cache'
+inputs:
+  preset:
+    description: "CMake preset name"
+    required: true
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: Cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.ccache
+          ~/.cpmcache
+        key: ${{ runner.os }}-${{ inputs.preset }}-${{ hashFiles('**/CMakeLists.txt', '**/CMakePresets.json') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ inputs.preset }}
