@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tooling and docs: unit tests, mkdocs site, Doxygen docs, and version bumping config.
 - Static analysis: clang-tidy integration with follow-up fixes.
 - CI workflows for build, test on GitHub
+- `as_span()` method for creating full array views (#1)
 
 ### Changed
 

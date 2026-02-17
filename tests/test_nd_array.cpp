@@ -501,3 +501,54 @@ TEST_CASE( "nd_array - Span to array", "[nd_array][span][copy]" )
 		REQUIRE( assigned( 0, 1 ) == 7 );
 	}
 }
+
+TEST_CASE( "nd_array - Array to span", "[nd_array][span][view]" )
+{
+	SECTION( "Create span from array" )
+	{
+		nd_array<int> arr( 3, 4 );
+		arr.fill( 5 );
+		arr( 1, 2 ) = 42;
+
+		nd_span<int> span = arr.as_span( );
+
+		REQUIRE( span.rank( ) == 2 );
+		REQUIRE( span.extent( 0 ) == 3 );
+		REQUIRE( span.extent( 1 ) == 4 );
+		REQUIRE( span.size( ) == 12 );
+		REQUIRE( span( 1, 2 ) == 42 );
+
+		// Modify through span
+		span( 0, 0 ) = 99;
+		REQUIRE( arr( 0, 0 ) == 99 );
+	}
+
+	SECTION( "Create const span from const array" )
+	{
+		const nd_array<int> arr = []( ) {
+			nd_array<int> temp( 2, 3 );
+			temp.fill( 10 );
+			return temp;
+		}( );
+
+		nd_span<const int> span = arr.as_span( );
+
+		REQUIRE( span.rank( ) == 2 );
+		REQUIRE( span.extent( 0 ) == 2 );
+		REQUIRE( span.extent( 1 ) == 3 );
+		REQUIRE( span( 0, 0 ) == 10 );
+	}
+
+	SECTION( "Span references same data" )
+	{
+		nd_array<double> arr( 5 );
+		arr.fill( 3.14 );
+
+		auto span = arr.as_span( );
+		REQUIRE( span.data( ) == arr.data( ) );
+
+		// Modify array, check span sees changes
+		arr( 3 ) = 2.71;
+		REQUIRE( span( 3 ) == 2.71 );
+	}
+}
