@@ -825,7 +825,7 @@ namespace cppa
 		/// \brief Creates an owning array by deep-copying an nd_span
 		/// \param t_span Source span to copy
 		/// \return Newly allocated array with the same contents
-		/// 	hrows std::invalid_argument if span rank exceeds MaxRank
+		/// \throws std::invalid_argument if span rank exceeds MaxRank
 		static nd_array from_span( const nd_span<const Ty, MaxRank>& t_span ) { return from_span_impl( t_span ); }
 
 		/// \brief Creates an owning array by deep-copying an nd_span
@@ -1205,6 +1205,20 @@ namespace cppa
 		/// \brief Gets a pointer to the underlying data (const)
 		/// \return Const pointer to the first element
 		[[nodiscard]] const_pointer data( ) const noexcept { return m_data.get( ); }
+
+		/// \brief Creates a span view of the entire array
+		/// \return Non-owning span view of all elements
+		/// \example
+		/// \code
+		/// nd_array<double> arr(3, 4);
+		/// arr.fill(1.0);
+		/// nd_span<double> span = arr.as_span();  // View of entire array
+		/// \endcode
+		[[nodiscard]] nd_span<Ty, MaxRank> as_span( ) noexcept { return nd_span<Ty, MaxRank>( m_data.get( ), m_extents, m_strides, m_rank ); }
+
+		/// \brief Creates a const span view of the entire array
+		/// \return Non-owning const span view of all elements
+		[[nodiscard]] nd_span<const Ty, MaxRank> as_span( ) const noexcept { return nd_span<const Ty, MaxRank>( m_data.get( ), m_extents, m_strides, m_rank ); }
 
 		/// \brief Returns a pointer to the first element for flat iteration
 		[[nodiscard]] pointer begin( ) noexcept { return m_data.get( ); }
