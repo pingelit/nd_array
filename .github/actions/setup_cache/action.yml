@@ -14,8 +14,8 @@ runs:
       uses: actions/cache@v3
       with:
         path: |
-          ~/.ccache
-          ~/.cpmcache
+          ${{ github.workspace }}/.ccache
+          ${{ github.workspace }}/.cpmcache
         key: ${{ runner.os }}-${{ inputs.preset }}-${{ hashFiles('**/CMakeLists.txt', '**/CMakePresets.json') }}
         restore-keys: |
           ${{ runner.os }}-${{ inputs.preset }}
