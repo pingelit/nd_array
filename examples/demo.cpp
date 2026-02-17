@@ -50,7 +50,7 @@ void demo_c_api_span( )
 	}
 
 	// Create subspan
-	auto sub = span_from_c.subspan( 1, 1, 3 );
+	auto sub = span_from_c.subspan( 1, { 1, 3 } );
 	std::cout << "\nSubspan (columns 1-2):\n";
 	for( size_t i = 0; i < sub.extent( 0 ); ++i )
 	{
@@ -177,7 +177,7 @@ void demo_array_properties( const nd_array<double>& arr2d, const nd_array<int>& 
 void demo_subspan_row( const nd_array<double>& arr2d )
 {
 	print_separator( "Subspan - getting a row from 2D array" );
-	auto row1 = arr2d.subspan( 0, 1, 2 ); // Get row 1 (from index 1 to 2)
+	auto row1 = arr2d.subspan( 0, { 1, 2 } ); // Get row 1 (from index 1 to 2)
 	std::cout << "Row 1 of 2D array: ";
 	for( size_t j = 0; j < row1.extent( 1 ); ++j )
 	{
@@ -191,7 +191,7 @@ void demo_subspan_row( const nd_array<double>& arr2d )
 void demo_subspan_columns( const nd_array<double>& arr2d )
 {
 	print_separator( "Subspan - getting a column range" );
-	auto cols = arr2d.subspan( 1, 1, 3 ); // Get columns 1-2
+	auto cols = arr2d.subspan( 1, { 1, 3 } ); // Get columns 1-2
 	std::cout << "Columns 1-2 of 2D array:\n";
 	for( size_t i = 0; i < cols.extent( 0 ); ++i )
 	{
