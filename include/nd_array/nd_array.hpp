@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <initializer_list>
+#include <iterator>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
@@ -514,23 +515,151 @@ namespace cppa
 		/// \return Const pointer to the first element
 		[[nodiscard]] const_pointer data( ) const noexcept { return m_data; }
 
-		/// \brief Returns a pointer to the first element for flat iteration
-		[[nodiscard]] pointer begin( ) noexcept { return m_data; }
+		/// \brief Stride-aware forward iterator for nd_span
+		/// \tparam IsConst Whether this is a const iterator
+		template<bool IsConst>
+		class basic_iterator
+		{
+		public:
+			using pointer           = std::conditional_t<IsConst, const Ty*, Ty*>;
+			using difference_type   = std::ptrdiff_t;
+			using value_type        = std::remove_cv_t<Ty>;
+			using reference         = std::conditional_t<IsConst, const Ty&, Ty&>;
+			using iterator_category = std::forward_iterator_tag;
 
-		/// \brief Returns a pointer past the last element for flat iteration
-		[[nodiscard]] pointer end( ) noexcept { return m_data + size( ); }
+			basic_iterator( ) = default;
 
-		/// \brief Returns a const pointer to the first element for flat iteration
-		[[nodiscard]] const_pointer begin( ) const noexcept { return m_data; }
+			basic_iterator( pointer t_data, const std::array<size_type, MaxRank>& t_extents, const std::array<size_type, MaxRank>& t_strides, size_type t_rank )
+			    : m_data( t_data )
+			    , m_extents( t_extents )
+			    , m_strides( t_strides )
+			    , m_rank( t_rank )
+			    , m_done( t_rank == 0 )
+			{
+				if( !m_done )
+				{
+					for( size_type i = 0; i < t_rank; ++i )
+					{
+						if( t_extents[i] == 0 )
+						{
+							m_done = true;
+							break;
+						}
+					}
+				}
+				update_ptr( );
+			}
 
-		/// \brief Returns a const pointer past the last element for flat iteration
-		[[nodiscard]] const_pointer end( ) const noexcept { return m_data + size( ); }
+			/// \brief Allow implicit conversion from non-const to const iterator
+			template<bool OtherConst, std::enable_if_t<IsConst && !OtherConst, int> = 0>
+			basic_iterator( const basic_iterator<OtherConst>& t_other )
+			    : m_data( t_other.m_data )
+			    , m_ptr( t_other.m_ptr )
+			    , m_extents( t_other.m_extents )
+			    , m_strides( t_other.m_strides )
+			    , m_indices( t_other.m_indices )
+			    , m_rank( t_other.m_rank )
+			    , m_done( t_other.m_done )
+			{
+			}
 
-		/// \brief Returns a const pointer to the first element for flat iteration
-		[[nodiscard]] const_pointer cbegin( ) const noexcept { return m_data; }
+			[[nodiscard]] reference operator*( ) const { return *m_ptr; }
+			[[nodiscard]] pointer   operator->( ) const { return m_ptr; }
 
-		/// \brief Returns a const pointer past the last element for flat iteration
-		[[nodiscard]] const_pointer cend( ) const noexcept { return m_data + size( ); }
+			basic_iterator& operator++( )
+			{
+				advance( );
+				return *this;
+			}
+
+			basic_iterator operator++( int )
+			{
+				basic_iterator tmp = *this;
+				advance( );
+				return tmp;
+			}
+
+			[[nodiscard]] bool operator==( const basic_iterator& t_other ) const
+			{
+				if( m_done && t_other.m_done )
+					return true;
+				if( m_done != t_other.m_done )
+					return false;
+				return m_ptr == t_other.m_ptr;
+			}
+
+			[[nodiscard]] bool operator!=( const basic_iterator& t_other ) const { return !( *this == t_other ); }
+
+			/// \brief Creates a past-the-end sentinel iterator
+			[[nodiscard]] static basic_iterator make_end( )
+			{
+				basic_iterator it;
+				it.m_done = true;
+				return it;
+			}
+
+		private:
+			pointer                        m_data    = nullptr;
+			pointer                        m_ptr     = nullptr;
+			std::array<size_type, MaxRank> m_extents{ };
+			std::array<size_type, MaxRank> m_strides{ };
+			std::array<size_type, MaxRank> m_indices{ };
+			size_type                      m_rank = 0;
+			bool                           m_done = true;
+
+			friend class basic_iterator<!IsConst>;
+
+			void update_ptr( )
+			{
+				if( m_done )
+				{
+					m_ptr = nullptr;
+					return;
+				}
+				m_ptr = m_data;
+				for( size_type i = 0; i < m_rank; ++i )
+				{
+					m_ptr += m_indices[i] * m_strides[i];
+				}
+			}
+
+			void advance( )
+			{
+				for( int i = static_cast<int>( m_rank ) - 1; i >= 0; --i )
+				{
+					++m_indices[i];
+					if( m_indices[i] < m_extents[i] )
+					{
+						update_ptr( );
+						return;
+					}
+					m_indices[i] = 0;
+				}
+				m_done = true;
+				m_ptr  = nullptr;
+			}
+		};
+
+		using iterator       = basic_iterator<false>; ///< Mutable stride-aware iterator
+		using const_iterator = basic_iterator<true>;  ///< Const stride-aware iterator
+
+		/// \brief Returns a stride-aware iterator to the first element
+		[[nodiscard]] iterator begin( ) noexcept { return iterator( m_data, m_extents, m_strides, m_rank ); }
+
+		/// \brief Returns a past-the-end iterator
+		[[nodiscard]] iterator end( ) noexcept { return iterator::make_end( ); }
+
+		/// \brief Returns a stride-aware const iterator to the first element
+		[[nodiscard]] const_iterator begin( ) const noexcept { return const_iterator( m_data, m_extents, m_strides, m_rank ); }
+
+		/// \brief Returns a past-the-end const iterator
+		[[nodiscard]] const_iterator end( ) const noexcept { return const_iterator::make_end( ); }
+
+		/// \brief Returns a stride-aware const iterator to the first element
+		[[nodiscard]] const_iterator cbegin( ) const noexcept { return const_iterator( m_data, m_extents, m_strides, m_rank ); }
+
+		/// \brief Returns a past-the-end const iterator
+		[[nodiscard]] const_iterator cend( ) const noexcept { return const_iterator::make_end( ); }
 
 	private:
 		pointer m_data;                           ///< Pointer to the first element

@@ -1,0 +1,5 @@
+if(EXISTS "/home/runner/work/nd_array/nd_array/_codeql_build_dir/nd_array_tests-b12d07c_tests.cmake")
+  include("/home/runner/work/nd_array/nd_array/_codeql_build_dir/nd_array_tests-b12d07c_tests.cmake")
+else()
+  add_test(nd_array_tests_NOT_BUILT-b12d07c nd_array_tests_NOT_BUILT-b12d07c)
+endif()

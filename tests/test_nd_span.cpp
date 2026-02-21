@@ -463,3 +463,91 @@ TEST_CASE( "nd_span - Integration with nd_array", "[nd_span][integration]" )
 		REQUIRE( arr( 1, 0 ) == 99 );
 	}
 }
+
+TEST_CASE( "nd_span - Stride-aware iteration", "[nd_span][iterators][stride]" )
+{
+	SECTION( "Iteration over column subspan respects strides" )
+	{
+		// 3x5 matrix with sequential values 0..14
+		std::array<int, 15> data = { };
+		for( size_t i = 0; i < 15; ++i )
+		{
+			data[i] = static_cast<int>( i );
+		}
+
+		nd_span<int> span( data.data( ), 3, 5 );
+		// Take columns 1-3 (subspan with non-unit stride in dim 0)
+		auto sub = span.subspan( 1, { 1, 4 } ); // extents [3,3], strides [5,1]
+
+		std::vector<int> values;
+		for( auto v: sub )
+		{
+			values.push_back( v );
+		}
+
+		// Expected row-major traversal: (0,0)=1, (0,1)=2, (0,2)=3,
+		//                                (1,0)=6, (1,1)=7, (1,2)=8,
+		//                                (2,0)=11,(2,1)=12,(2,2)=13
+		REQUIRE( values.size( ) == 9 );
+		REQUIRE( values[0] == 1 );
+		REQUIRE( values[1] == 2 );
+		REQUIRE( values[2] == 3 );
+		REQUIRE( values[3] == 6 );
+		REQUIRE( values[4] == 7 );
+		REQUIRE( values[5] == 8 );
+		REQUIRE( values[6] == 11 );
+		REQUIRE( values[7] == 12 );
+		REQUIRE( values[8] == 13 );
+	}
+
+	SECTION( "Iteration over transposed span respects strides" )
+	{
+		// 2x3 matrix: 1 2 3 / 4 5 6
+		std::array<int, 6> data = { 1, 2, 3, 4, 5, 6 };
+		nd_span<int> span( data.data( ), 2, 3 ); // strides [3,1]
+
+		auto t = span.T( ); // extents [3,2], strides [1,3]
+
+		std::vector<int> values;
+		for( auto v: t )
+		{
+			values.push_back( v );
+		}
+
+		// Expected row-major traversal of transposed view:
+		// t(0,0)=1, t(0,1)=4, t(1,0)=2, t(1,1)=5, t(2,0)=3, t(2,1)=6
+		REQUIRE( values.size( ) == 6 );
+		REQUIRE( values[0] == 1 );
+		REQUIRE( values[1] == 4 );
+		REQUIRE( values[2] == 2 );
+		REQUIRE( values[3] == 5 );
+		REQUIRE( values[4] == 3 );
+		REQUIRE( values[5] == 6 );
+	}
+
+	SECTION( "Write through iterator over subspan modifies correct elements" )
+	{
+		std::array<int, 20> data = { };
+		nd_span<int> span( data.data( ), 4, 5 );
+
+		// Take rows 1-2 (subspan along dim 0)
+		auto sub = span.subspan( 0, { 1, 3 } ); // extents [2,5], strides [5,1]
+		int  val = 1;
+		for( auto& v: sub )
+		{
+			v = val++;
+		}
+
+		// Rows 0 and 3 should be untouched
+		for( size_t j = 0; j < 5; ++j )
+		{
+			REQUIRE( span( 0, j ) == 0 );
+			REQUIRE( span( 3, j ) == 0 );
+		}
+		// Rows 1-2 should have values 1-10
+		REQUIRE( span( 1, 0 ) == 1 );
+		REQUIRE( span( 1, 4 ) == 5 );
+		REQUIRE( span( 2, 0 ) == 6 );
+		REQUIRE( span( 2, 4 ) == 10 );
+	}
+}
