@@ -157,6 +157,136 @@ namespace cppa
 				seen[axis] = true;
 			}
 		}
+		/// \brief Stride-aware forward iterator for nd_span
+		/// \tparam ElementType Element type (use const-qualified type for a const iterator)
+		/// \tparam MaxRank Maximum number of dimensions
+		template<typename ElementType, size_t MaxRank>
+		class nd_iterator
+		{
+		public:
+			using size_type         = size_t;
+			using pointer           = ElementType*;
+			using difference_type   = std::ptrdiff_t;
+			using value_type        = std::remove_cv_t<ElementType>;
+			using reference         = ElementType&;
+			using iterator_category = std::forward_iterator_tag;
+
+			nd_iterator( ) = default;
+
+			nd_iterator( pointer t_data, const std::array<size_type, MaxRank>& t_extents, const std::array<size_type, MaxRank>& t_strides, size_type t_rank )
+			    : m_data( t_data )
+			    , m_extents( t_extents )
+			    , m_strides( t_strides )
+			    , m_rank( t_rank )
+			    , m_done( t_rank == 0 )
+			{
+				if( !m_done )
+				{
+					for( size_type i = 0; i < t_rank; ++i )
+					{
+						if( t_extents[i] == 0 )
+						{
+							m_done = true;
+							break;
+						}
+					}
+				}
+				update_ptr( );
+			}
+
+			/// \brief Allow implicit conversion from non-const to const iterator
+			template<typename OtherTy, std::enable_if_t<std::is_const_v<ElementType> && !std::is_const_v<OtherTy>, int> = 0>
+			nd_iterator( const nd_iterator<OtherTy, MaxRank>& t_other )
+			    : m_data( t_other.m_data )
+			    , m_ptr( t_other.m_ptr )
+			    , m_extents( t_other.m_extents )
+			    , m_strides( t_other.m_strides )
+			    , m_indices( t_other.m_indices )
+			    , m_rank( t_other.m_rank )
+			    , m_done( t_other.m_done )
+			{
+			}
+
+			[[nodiscard]] reference operator*( ) const { return *m_ptr; }
+			[[nodiscard]] pointer   operator->( ) const { return m_ptr; }
+
+			nd_iterator& operator++( )
+			{
+				advance( );
+				return *this;
+			}
+
+			nd_iterator operator++( int )
+			{
+				nd_iterator tmp = *this;
+				advance( );
+				return tmp;
+			}
+
+			[[nodiscard]] bool operator==( const nd_iterator& t_other ) const
+			{
+				if( m_done && t_other.m_done )
+					return true;
+				if( m_done != t_other.m_done )
+					return false;
+				return m_ptr == t_other.m_ptr;
+			}
+
+			[[nodiscard]] bool operator!=( const nd_iterator& t_other ) const { return !( *this == t_other ); }
+
+			/// \brief Creates a past-the-end sentinel iterator
+			[[nodiscard]] static nd_iterator make_end( )
+			{
+				nd_iterator it;
+				it.m_done = true;
+				return it;
+			}
+
+		private:
+			pointer                        m_data    = nullptr;
+			pointer                        m_ptr     = nullptr;
+			std::array<size_type, MaxRank> m_extents{ };
+			std::array<size_type, MaxRank> m_strides{ };
+			std::array<size_type, MaxRank> m_indices{ };
+			size_type                      m_rank = 0;
+			bool                           m_done = true;
+
+			// Grant access to the opposite const-ness specialisation for the converting constructor
+			friend class nd_iterator<std::conditional_t<std::is_const_v<ElementType>, std::remove_const_t<ElementType>, const ElementType>, MaxRank>;
+
+			void update_ptr( )
+			{
+				if( m_done )
+				{
+					m_ptr = nullptr;
+					return;
+				}
+				m_ptr = m_data;
+				for( size_type i = 0; i < m_rank; ++i )
+				{
+					m_ptr += m_indices[i] * m_strides[i];
+				}
+			}
+
+			void advance( )
+			{
+				// Use a signed loop variable so that after processing dimension 0
+				// the decrement makes i == -1, causing i >= 0 to be false and exiting correctly
+				for( int i = static_cast<int>( m_rank ) - 1; i >= 0; --i )
+				{
+					++m_indices[i];
+					if( m_indices[i] < m_extents[i] )
+					{
+						update_ptr( );
+						return;
+					}
+					m_indices[i] = 0;
+				}
+				m_done = true;
+				m_ptr  = nullptr;
+			}
+		};
+
 	} // namespace detail
 
 	/// \class nd_span
@@ -515,133 +645,8 @@ namespace cppa
 		/// \return Const pointer to the first element
 		[[nodiscard]] const_pointer data( ) const noexcept { return m_data; }
 
-		/// \brief Stride-aware forward iterator for nd_span
-		/// \tparam IsConst Whether this is a const iterator
-		template<bool IsConst>
-		class basic_iterator
-		{
-		public:
-			using pointer           = std::conditional_t<IsConst, const Ty*, Ty*>;
-			using difference_type   = std::ptrdiff_t;
-			using value_type        = std::remove_cv_t<Ty>;
-			using reference         = std::conditional_t<IsConst, const Ty&, Ty&>;
-			using iterator_category = std::forward_iterator_tag;
-
-			basic_iterator( ) = default;
-
-			basic_iterator( pointer t_data, const std::array<size_type, MaxRank>& t_extents, const std::array<size_type, MaxRank>& t_strides, size_type t_rank )
-			    : m_data( t_data )
-			    , m_extents( t_extents )
-			    , m_strides( t_strides )
-			    , m_rank( t_rank )
-			    , m_done( t_rank == 0 )
-			{
-				if( !m_done )
-				{
-					for( size_type i = 0; i < t_rank; ++i )
-					{
-						if( t_extents[i] == 0 )
-						{
-							m_done = true;
-							break;
-						}
-					}
-				}
-				update_ptr( );
-			}
-
-			/// \brief Allow implicit conversion from non-const to const iterator
-			template<bool OtherConst, std::enable_if_t<IsConst && !OtherConst, int> = 0>
-			basic_iterator( const basic_iterator<OtherConst>& t_other )
-			    : m_data( t_other.m_data )
-			    , m_ptr( t_other.m_ptr )
-			    , m_extents( t_other.m_extents )
-			    , m_strides( t_other.m_strides )
-			    , m_indices( t_other.m_indices )
-			    , m_rank( t_other.m_rank )
-			    , m_done( t_other.m_done )
-			{
-			}
-
-			[[nodiscard]] reference operator*( ) const { return *m_ptr; }
-			[[nodiscard]] pointer   operator->( ) const { return m_ptr; }
-
-			basic_iterator& operator++( )
-			{
-				advance( );
-				return *this;
-			}
-
-			basic_iterator operator++( int )
-			{
-				basic_iterator tmp = *this;
-				advance( );
-				return tmp;
-			}
-
-			[[nodiscard]] bool operator==( const basic_iterator& t_other ) const
-			{
-				if( m_done && t_other.m_done )
-					return true;
-				if( m_done != t_other.m_done )
-					return false;
-				return m_ptr == t_other.m_ptr;
-			}
-
-			[[nodiscard]] bool operator!=( const basic_iterator& t_other ) const { return !( *this == t_other ); }
-
-			/// \brief Creates a past-the-end sentinel iterator
-			[[nodiscard]] static basic_iterator make_end( )
-			{
-				basic_iterator it;
-				it.m_done = true;
-				return it;
-			}
-
-		private:
-			pointer                        m_data    = nullptr;
-			pointer                        m_ptr     = nullptr;
-			std::array<size_type, MaxRank> m_extents{ };
-			std::array<size_type, MaxRank> m_strides{ };
-			std::array<size_type, MaxRank> m_indices{ };
-			size_type                      m_rank = 0;
-			bool                           m_done = true;
-
-			friend class basic_iterator<!IsConst>;
-
-			void update_ptr( )
-			{
-				if( m_done )
-				{
-					m_ptr = nullptr;
-					return;
-				}
-				m_ptr = m_data;
-				for( size_type i = 0; i < m_rank; ++i )
-				{
-					m_ptr += m_indices[i] * m_strides[i];
-				}
-			}
-
-			void advance( )
-			{
-				for( int i = static_cast<int>( m_rank ) - 1; i >= 0; --i )
-				{
-					++m_indices[i];
-					if( m_indices[i] < m_extents[i] )
-					{
-						update_ptr( );
-						return;
-					}
-					m_indices[i] = 0;
-				}
-				m_done = true;
-				m_ptr  = nullptr;
-			}
-		};
-
-		using iterator       = basic_iterator<false>; ///< Mutable stride-aware iterator
-		using const_iterator = basic_iterator<true>;  ///< Const stride-aware iterator
+		using iterator       = detail::nd_iterator<Ty, MaxRank>;       ///< Mutable stride-aware iterator
+		using const_iterator = detail::nd_iterator<const Ty, MaxRank>; ///< Const stride-aware iterator
 
 		/// \brief Returns a stride-aware iterator to the first element
 		[[nodiscard]] iterator begin( ) noexcept { return iterator( m_data, m_extents, m_strides, m_rank ); }
