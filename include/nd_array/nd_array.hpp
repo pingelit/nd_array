@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <initializer_list>
+#include <iterator>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
@@ -156,6 +157,202 @@ namespace cppa
 				seen[axis] = true;
 			}
 		}
+		/// \brief Stride-aware random access iterator for nd_span
+		/// \tparam ElementType Element type (use const-qualified type for a const iterator)
+		/// \tparam MaxRank Maximum number of dimensions
+		template<typename ElementType, size_t MaxRank>
+		class nd_iterator
+		{
+		public:
+			using size_type         = size_t;
+			using pointer           = ElementType*;
+			using difference_type   = std::ptrdiff_t;
+			using value_type        = std::remove_cv_t<ElementType>;
+			using reference         = ElementType&;
+			using iterator_category = std::random_access_iterator_tag;
+
+			nd_iterator( ) = default;
+
+			/// \brief Constructs an iterator at a given flat position within the span
+			/// \param t_data Pointer to the first element of the span
+			/// \param t_extents Extent (size) of each dimension
+			/// \param t_strides Stride of each dimension
+			/// \param t_rank Number of active dimensions
+			/// \param t_flat_start Starting flat index (0 = begin, total_size = end)
+			nd_iterator( pointer t_data, const std::array<size_type, MaxRank>& t_extents, const std::array<size_type, MaxRank>& t_strides, size_type t_rank,
+			             size_type t_flat_start = 0 )
+			    : m_data( t_data )
+			    , m_extents( t_extents )
+			    , m_strides( t_strides )
+			    , m_rank( t_rank )
+			    , m_flat_size( compute_size<MaxRank>( t_extents, t_rank ) )
+			    , m_flat_index( t_flat_start )
+			{
+				if( m_flat_index > m_flat_size )
+				{
+					m_flat_index = m_flat_size;
+				}
+				update_from_flat_index( );
+			}
+
+			/// \brief Allow implicit conversion from non-const to const iterator
+			template<typename OtherTy, std::enable_if_t<std::is_const_v<ElementType> && !std::is_const_v<OtherTy>, int> = 0>
+			nd_iterator( const nd_iterator<OtherTy, MaxRank>& t_other )
+			    : m_data( t_other.m_data )
+			    , m_ptr( t_other.m_ptr )
+			    , m_extents( t_other.m_extents )
+			    , m_strides( t_other.m_strides )
+			    , m_indices( t_other.m_indices )
+			    , m_rank( t_other.m_rank )
+			    , m_flat_size( t_other.m_flat_size )
+			    , m_flat_index( t_other.m_flat_index )
+			{
+			}
+
+			// --- Element access ---
+
+			[[nodiscard]] reference operator*( ) const { return *m_ptr; }
+			[[nodiscard]] pointer   operator->( ) const { return m_ptr; }
+
+			/// \brief Returns a reference to the element at offset n from this iterator
+			[[nodiscard]] reference operator[]( difference_type t_n ) const
+			{
+				nd_iterator tmp = *this;
+				tmp += t_n;
+				return *tmp;
+			}
+
+			// --- Increment / decrement ---
+
+			nd_iterator& operator++( )
+			{
+				advance( 1 );
+				return *this;
+			}
+
+			nd_iterator operator++( int )
+			{
+				nd_iterator tmp = *this;
+				advance( 1 );
+				return tmp;
+			}
+
+			nd_iterator& operator--( )
+			{
+				advance( -1 );
+				return *this;
+			}
+
+			nd_iterator operator--( int )
+			{
+				nd_iterator tmp = *this;
+				advance( -1 );
+				return tmp;
+			}
+
+			// --- Arithmetic ---
+
+			nd_iterator& operator+=( difference_type t_n )
+			{
+				advance( t_n );
+				return *this;
+			}
+
+			nd_iterator& operator-=( difference_type t_n )
+			{
+				advance( -t_n );
+				return *this;
+			}
+
+			[[nodiscard]] nd_iterator operator+( difference_type t_n ) const
+			{
+				nd_iterator tmp = *this;
+				tmp += t_n;
+				return tmp;
+			}
+
+			[[nodiscard]] nd_iterator operator-( difference_type t_n ) const
+			{
+				nd_iterator tmp = *this;
+				tmp -= t_n;
+				return tmp;
+			}
+
+			[[nodiscard]] friend nd_iterator operator+( difference_type t_n, const nd_iterator& t_it ) { return t_it + t_n; }
+
+			/// \brief Returns the signed distance between two iterators from the same span
+			[[nodiscard]] difference_type operator-( const nd_iterator& t_other ) const
+			{
+				return static_cast<difference_type>( m_flat_index ) - static_cast<difference_type>( t_other.m_flat_index );
+			}
+
+			// --- Comparison ---
+
+			[[nodiscard]] bool operator==( const nd_iterator& t_other ) const { return m_flat_index == t_other.m_flat_index; }
+			[[nodiscard]] bool operator!=( const nd_iterator& t_other ) const { return !( *this == t_other ); }
+			[[nodiscard]] bool operator<( const nd_iterator& t_other ) const { return m_flat_index < t_other.m_flat_index; }
+			[[nodiscard]] bool operator>( const nd_iterator& t_other ) const { return t_other < *this; }
+			[[nodiscard]] bool operator<=( const nd_iterator& t_other ) const { return !( *this > t_other ); }
+			[[nodiscard]] bool operator>=( const nd_iterator& t_other ) const { return !( *this < t_other ); }
+
+		private:
+			pointer                        m_data       = nullptr;
+			pointer                        m_ptr        = nullptr;
+			std::array<size_type, MaxRank> m_extents{ };
+			std::array<size_type, MaxRank> m_strides{ };
+			std::array<size_type, MaxRank> m_indices{ };
+			size_type                      m_rank       = 0;
+			size_type                      m_flat_size  = 0;
+			size_type                      m_flat_index = 0;
+
+			// Grant access to the opposite const-ness specialisation for the converting constructor
+			friend class nd_iterator<std::conditional_t<std::is_const_v<ElementType>, std::remove_const_t<ElementType>, const ElementType>, MaxRank>;
+
+			/// \brief Updates the multi-dimensional indices and element pointer from the current flat index
+			void update_from_flat_index( )
+			{
+				if( m_flat_index >= m_flat_size )
+				{
+					m_ptr = nullptr;
+					return;
+				}
+				// Decompose flat index into per-dimension indices (row-major)
+				size_type f = m_flat_index;
+				for( int i = static_cast<int>( m_rank ) - 1; i >= 0; --i )
+				{
+					m_indices[i] = f % m_extents[i];
+					f /= m_extents[i];
+				}
+				// Compute element pointer using strides
+				m_ptr = m_data;
+				for( size_type i = 0; i < m_rank; ++i )
+				{
+					m_ptr += m_indices[i] * m_strides[i];
+				}
+			}
+
+			/// \brief Moves the iterator by t_n positions (positive = forward, negative = backward)
+			void advance( difference_type t_n )
+			{
+				if( t_n == 0 )
+					return;
+				const auto signed_index = static_cast<difference_type>( m_flat_index ) + t_n;
+				if( signed_index < 0 )
+				{
+					m_flat_index = 0;
+				}
+				else if( static_cast<size_type>( signed_index ) >= m_flat_size )
+				{
+					m_flat_index = m_flat_size;
+				}
+				else
+				{
+					m_flat_index = static_cast<size_type>( signed_index );
+				}
+				update_from_flat_index( );
+			}
+		};
+
 	} // namespace detail
 
 	/// \class nd_span
@@ -514,23 +711,26 @@ namespace cppa
 		/// \return Const pointer to the first element
 		[[nodiscard]] const_pointer data( ) const noexcept { return m_data; }
 
-		/// \brief Returns a pointer to the first element for flat iteration
-		[[nodiscard]] pointer begin( ) noexcept { return m_data; }
+		using iterator       = detail::nd_iterator<Ty, MaxRank>;       ///< Mutable stride-aware iterator
+		using const_iterator = detail::nd_iterator<const Ty, MaxRank>; ///< Const stride-aware iterator
 
-		/// \brief Returns a pointer past the last element for flat iteration
-		[[nodiscard]] pointer end( ) noexcept { return m_data + size( ); }
+		/// \brief Returns a stride-aware iterator to the first element
+		[[nodiscard]] iterator begin( ) noexcept { return iterator( m_data, m_extents, m_strides, m_rank ); }
 
-		/// \brief Returns a const pointer to the first element for flat iteration
-		[[nodiscard]] const_pointer begin( ) const noexcept { return m_data; }
+		/// \brief Returns a past-the-end iterator
+		[[nodiscard]] iterator end( ) noexcept { return iterator( m_data, m_extents, m_strides, m_rank, size( ) ); }
 
-		/// \brief Returns a const pointer past the last element for flat iteration
-		[[nodiscard]] const_pointer end( ) const noexcept { return m_data + size( ); }
+		/// \brief Returns a stride-aware const iterator to the first element
+		[[nodiscard]] const_iterator begin( ) const noexcept { return const_iterator( m_data, m_extents, m_strides, m_rank ); }
 
-		/// \brief Returns a const pointer to the first element for flat iteration
-		[[nodiscard]] const_pointer cbegin( ) const noexcept { return m_data; }
+		/// \brief Returns a past-the-end const iterator
+		[[nodiscard]] const_iterator end( ) const noexcept { return const_iterator( m_data, m_extents, m_strides, m_rank, size( ) ); }
 
-		/// \brief Returns a const pointer past the last element for flat iteration
-		[[nodiscard]] const_pointer cend( ) const noexcept { return m_data + size( ); }
+		/// \brief Returns a stride-aware const iterator to the first element
+		[[nodiscard]] const_iterator cbegin( ) const noexcept { return const_iterator( m_data, m_extents, m_strides, m_rank ); }
+
+		/// \brief Returns a past-the-end const iterator
+		[[nodiscard]] const_iterator cend( ) const noexcept { return const_iterator( m_data, m_extents, m_strides, m_rank, size( ) ); }
 
 	private:
 		pointer m_data;                           ///< Pointer to the first element
