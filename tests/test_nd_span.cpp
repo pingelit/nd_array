@@ -2,10 +2,17 @@
 
 #include <array>
 #include <catch2/catch_test_macros.hpp>
+#include <iterator>
 #include <vector>
 
 
 using namespace cppa;
+
+// Verify iterator category at compile time
+static_assert( std::is_same_v<std::iterator_traits<nd_span<int>::iterator>::iterator_category, std::random_access_iterator_tag>,
+               "nd_span::iterator must be a random access iterator" );
+static_assert( std::is_same_v<std::iterator_traits<nd_span<int>::const_iterator>::iterator_category, std::random_access_iterator_tag>,
+               "nd_span::const_iterator must be a random access iterator" );
 
 TEST_CASE( "nd_span - Construction", "[nd_span][construction]" )
 {
@@ -549,5 +556,67 @@ TEST_CASE( "nd_span - Stride-aware iteration", "[nd_span][iterators][stride]" )
 		REQUIRE( span( 1, 4 ) == 5 );
 		REQUIRE( span( 2, 0 ) == 6 );
 		REQUIRE( span( 2, 4 ) == 10 );
+	}
+
+	SECTION( "Random access operations on contiguous span" )
+	{
+		std::array<int, 6> data = { 10, 20, 30, 40, 50, 60 };
+		nd_span<int> span( data.data( ), 2, 3 );
+
+		auto it = span.begin( );
+
+		// operator[] relative to begin
+		REQUIRE( it[0] == 10 );
+		REQUIRE( it[5] == 60 );
+
+		// operator+ / operator-
+		REQUIRE( *( it + 2 ) == 30 );
+		REQUIRE( *( 2 + it ) == 30 );
+
+		// advance and retreat
+		it += 4;
+		REQUIRE( *it == 50 );
+		it -= 3;
+		REQUIRE( *it == 20 );
+
+		// iterator difference
+		auto it2 = span.begin( ) + 4;
+		REQUIRE( it2 - span.begin( ) == 4 );
+		REQUIRE( span.end( ) - span.begin( ) == 6 );
+
+		// ordering
+		REQUIRE( span.begin( ) < span.end( ) );
+		REQUIRE( span.end( ) > span.begin( ) );
+		REQUIRE( span.begin( ) <= span.begin( ) );
+		REQUIRE( span.end( ) >= span.end( ) );
+
+		// pre/post decrement
+		auto it3 = span.end( );
+		--it3;
+		REQUIRE( *it3 == 60 );
+		it3--;
+		REQUIRE( *it3 == 50 );
+	}
+
+	SECTION( "Random access arithmetic over non-contiguous subspan" )
+	{
+		// 3x5 matrix, values 0..14
+		std::array<int, 15> data = { };
+		for( size_t i = 0; i < 15; ++i )
+		{
+			data[i] = static_cast<int>( i );
+		}
+
+		nd_span<int> span( data.data( ), 3, 5 );
+		auto sub = span.subspan( 1, { 1, 4 } ); // extents [3,3], strides [5,1]
+
+		// begin()[4] should be the 5th element in flat traversal order: (1,1)=7
+		REQUIRE( sub.begin( )[4] == 7 );
+
+		// end - begin == size
+		REQUIRE( sub.end( ) - sub.begin( ) == static_cast<std::ptrdiff_t>( sub.size( ) ) );
+
+		// advance begin by size reaches end
+		REQUIRE( sub.begin( ) + static_cast<std::ptrdiff_t>( sub.size( ) ) == sub.end( ) );
 	}
 }
